@@ -1,0 +1,16 @@
+{
+  "name": "sofrencia_bot",
+  "version": "1.0.0",
+  "description": "Digite 's/comandos' para ver a lista de comandos",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "jixt3r",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3"
+  }
+}
