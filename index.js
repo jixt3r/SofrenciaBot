@@ -72,4 +72,4 @@ client.on('messageCreate', (message) => {
 //promise.then(console.log, console.error);
 
 //client.login(process.env.TOKEN); //Ligando o Bot caso ele consiga acessar o token
-client.login('OTU0MTIxOTEzOTM5MTU3MDMz.YjOhRw.N3rVFrGlfstuqgeJeJIRjswCdOs');
+client.login(process.env.TOKEN);
