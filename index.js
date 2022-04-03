@@ -1,18 +1,27 @@
 const express = require('express');
-const config = require('./config.json'); //Pegand>
+const config = require('./config.json');
 const { Client, Intents } = require('discord.js');
 require('dotenv/config');
 const app = express();
+var usero;
 var all = {
-  client: new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]}),
-  ativos: {
-    //<channelId>: {
-    //  servico: <command>,
-    //  infos:
-    //}
-  }
+  client: new Client({ intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES,
+    Intents.FLAGS.GUILD_MESSAGE_REACTIONS]
+  }),
+  ativos: {}
 };
 const client = all.client;
+
+// Intents: "GUILDS" "GUILD_MEMBERS" "GUILD_BANS"
+//"GUILD_EMOJIS_AND_STICKERS" "GUILD_INTEGRATIONS"
+//"GUILD_WEBHOOKS" "GUILD_INVITES"
+//"GUILD_VOICE_STATES" "GUILD_PRESENCES"
+//"GUILD_MESSAGES" "GUILD_MESSAGE_REACTIONS"
+//"GUILD_MESSAGE_TYPING" "DIRECT_MESSAGES"
+//"DIRECT_MESSAGE_REACTIONS"
+//"DIRECT_MESSAGE_TYPING" "GUILD_SCHEDULED_EVENTS"
 
 app.get("/", (request, response) => {
   const ping = new Date();
@@ -21,10 +30,10 @@ app.get("/", (request, response) => {
   response.sendStatus(200);
 });
 
-app.listen(8080); // Recebe solicitações que o deixa online
+app.listen(8180) // Recebe solicitações que o deixa online
 
-client.on('ready', () => {
-	console.log('- Bot pronto. Manda bala!');
+client.on('ready', (client) => {
+  console.log('\n- Bot pronto. Manda bala!');
 });
 
 client.on('messageCreate', (message) => {
@@ -46,7 +55,7 @@ client.on('messageCreate', (message) => {
         return commandFile.run(all);
       } catch (err) {
           console.log('\n- Erro1: ' + err);
-          throw err;
+          //throw err;
       }
     } else {
     //Se estiver ativo
@@ -60,4 +69,7 @@ client.on('messageCreate', (message) => {
     }
 });
 
-all.client.login(process.env.TOKEN); //Ligando o Bot caso ele consiga acessar o token
+//promise.then(console.log, console.error);
+
+//client.login(process.env.TOKEN); //Ligando o Bot caso ele consiga acessar o token
+client.login('OTU0MTIxOTEzOTM5MTU3MDMz.YjOhRw.N3rVFrGlfstuqgeJeJIRjswCdOs');

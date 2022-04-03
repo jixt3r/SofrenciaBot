@@ -15,6 +15,7 @@ const ajudas = {
          '• Se usar uma palavra de tamanho diferente da palavra a ser descoberta, a primeira letra será considerada como tentativa;\n' +
          '- **Exemplo**: Se a palavra a ser descoberta for **carreta** e a tentativa for **barro** a letra considerada será **B**;\n\n' +
          '• Para pedir uma dica use o comando **dica**;\n\n' +
+         `• Se tiverem muitas mensagens após a mensagem da forca, use **${config.prefix}up** para reenviar a mensagem;\n\n` +
          '• O limite de tempo do jogo é **6 minutos e 40s**, se chegar à isso o jogador perde;\n\n' +
          '• Para terminar o jogo use o comando **end**.'
 };

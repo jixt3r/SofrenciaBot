@@ -8,7 +8,9 @@ const temas = ["Animal", "País", "Futebol", "Comida",
 var ativo;
 var args;
 var message;
-var dados = {};
+var dados = {
+  deaths: []
+};
 var src;
 var palavras = pList.palavras.split(',');
 
@@ -56,8 +58,13 @@ gameOver = (src, all) => {
   src.itens.title = ':x: FIM DE JOGO!';
   src.itens.desc = 'Acabaram as tentativas';
   src.itens.footer.text = ':(';
+  try {
+    src.msgdica.delete()
+  } catch (err) {}
   src.answ.edit({ embeds: [embedMess(src.itens)] });
-  clearTimeout(src.death);
+//  console.log('Acabou o timeout do canal ' + src.message.channelId);
+  clearTimeout(dados.deaths[message.channelId]);
+  //all.dados.deaths.shift();
   reset(all, dados);
 }
 
@@ -74,12 +81,16 @@ vitoria = (src, all) => {
   src.itens.title = ':white_check_mark: PALAVRA DESCOBERTA!';
   src.itens.desc = '​:trophy: <@' + src.message.author.id + '> acertou a palavra!';
   src.itens.footer.text = '';
-  src.answ.edit({ embeds: [embedMess(src.itens)] });
+  src.answ.delete()
+    .catch(console.error);
+  src.message.channel.send({ embeds: [embedMess(src.itens)] });
   all.ativos[src.message.channelId] = undefined;
   try {
     src.msgdica.delete()
   } catch (err) {}
-  clearTimeout(src.death);
+//  console.log('Acabou o timeout do canal ' + src.message.channelId)
+  clearTimeout(dados.deaths[message.channelId]);
+  //all.dados.deaths.shift();
   reset(all, dados);
 }
 
@@ -132,9 +143,11 @@ module.exports.run = async (all) => {
       jaErrou: false
     }
 
+
     //Simplifica variaveis
     src = dados[message.channelId];
     src.message = message;
+    all.dados = dados;
 
     //escolhe a palavra
     src.palavra = palavras[random(palavras.length - 1)]
@@ -197,14 +210,18 @@ module.exports.run = async (all) => {
       }
     };
 
-    src.death = setTimeout(function() {
-      src.itens.color = colorIs(0);
-      src.itens.title = ':x: FIM DE JOGO!';
-      src.itens.desc = ':clock4: Acabou o tempo';
-      src.itens.footer.text = '';
-      src.answ.edit({ embeds: [embedMess(src.itens)]});
-      reset(all, dados);
-    }, 0 * 60000 + 15 * 1000)
+//    console.log('Timeout definido para ' + src.message.channelId);
+    dados.deaths[message.channelId] = setTimeout(function(mess, sr) {
+      sr.itens.color = colorIs(0);
+      sr.itens.title = ':x: FIM DE JOGO!';
+      sr.itens.desc = ':clock4: Acabou o tempo';
+      sr.itens.footer.text = '';
+      sr.answ.edit({ embeds: [embedMess(sr.itens)]});
+//      console.log('Chegou ao fim o death do canal ' + sr.message.channelId);
+      all.ativos[mess.channelId] = undefined;
+      dados[mess.channelId] = undefined;
+      dados.deaths.shift();
+    }, 6 * 60000 + 40 * 1000, message, src)
 
     src.answ = await message.channel.send({ embeds: [embedMess(src.itens)] });
   } else {
@@ -227,7 +244,10 @@ module.exports.run = async (all) => {
           } catch (err) {}
           //message.delete()
           src.answ.edit({ embeds: [embedMess(src.itens)]});
-          clearTimeout(src.death);
+//          console.log('Desfez o Death do ' + src.message.channelId)
+//          console.log(dados.deaths[0])
+          clearTimeout(dados.deaths[message.channelId]);
+//          all.dados.deaths.shift();
           reset(all, dados);
           return;
           break;

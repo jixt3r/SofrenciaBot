@@ -26,3 +26,8 @@ module.exports.random = function(n) {
   let max = n + 1;
   return Math.floor(Math.random() * max);
 };
+
+module.exports.remoji = function(mess, emoji, user) {
+  mess.reactions.cache.get(emoji).users.remove(user);
+};
+
