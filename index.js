@@ -3,6 +3,8 @@ const config = require('./config.json');
 const { Client, Intents } = require('discord.js');
 require('dotenv/config');
 const app = express();
+const ForcaBot = process.env.FORCABOT;
+const BotTestes = process.env.TESTESBOT;
 var usero;
 var all = {
   client: new Client({ intents: [
@@ -71,5 +73,4 @@ client.on('messageCreate', (message) => {
 
 //promise.then(console.log, console.error);
 
-//client.login(process.env.TOKEN); //Ligando o Bot caso ele consiga acessar o token
-client.login(process.env.TOKEN);
+client.login(BotTestes); //Ligando o Bot caso ele consiga acessar o token
