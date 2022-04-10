@@ -1,4 +1,4 @@
-const { embedMess, random } = require('../files/funcs.js');
+const { embedMess, inMili, random } = require('../files/funcs.js');
 const config = require('../config.json');
 const pList = require('../files/ultra.json');
 const temas = ["Animal", "País", "Futebol", "Comida",
@@ -120,9 +120,18 @@ module.exports.run = async (all) => {
   args = all.args;
   message = all.message;
   ativo = all.ativo;
+  if (all.channelToSend == undefined && all.author == undefined) {
+   all.channelToSend = message.channel;
+   console.log("-- channelToSend definido");
+   all.author = message.author;
+   console.log("-- all.author definido");
+   await all.author.createDM()
+    .then(DM => all.dm = DM);
+    all.hear();
+  };
 
   //Se nao estiver ativo
-  if (ativo == false) {
+  if (!ativo) {
     //Abre o espaco para informacoes do jogo
     //do canal
     all.ativos[message.channelId] = {};
@@ -142,7 +151,6 @@ module.exports.run = async (all) => {
       tentativas: [],
       jaErrou: false
     }
-
 
     //Simplifica variaveis
     src = dados[message.channelId];
@@ -221,7 +229,7 @@ module.exports.run = async (all) => {
       all.ativos[mess.channelId] = undefined;
       dados[mess.channelId] = undefined;
       dados.deaths.shift();
-    }, 6 * 60000 + 40 * 1000, message, src)
+    }, inMili('00:06:40'), message, src)
 
     src.answ = await message.channel.send({ embeds: [embedMess(src.itens)] });
   } else {
