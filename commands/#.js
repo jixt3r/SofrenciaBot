@@ -1,7 +1,7 @@
 
 //-------------------Variaveis--------------------
 const config = require('../config.json');
-var user = {};
+var all = {};
 var invited;
 var rodada = 0;
 const { embedMess, remoji } = require('../files/funcs.js');
@@ -15,7 +15,10 @@ var grade = [
   '!', '!', '!', // 3 4 5
   '!', '!', '!'  // 6 7 8
 ];
-
+const filter = (reaction, user) => {
+  let reactions = ["👍", "👎"];
+  return reactions.includes(reaction.emoji.name) && user.id == src.players[1];
+};
 var itens = {
   color: '#c0c0c0',
   title: 'Jogo da velha',
@@ -37,7 +40,7 @@ textGrade = (grade) => {
     } else {
        text = text + emojis[i] + ` `;
     };
-    if (i == 2 || i == 5)  {
+    if (i == 2 || i == 5) {
       text = text + '\n'
     };
   };
@@ -72,88 +75,107 @@ venceu = (grade) => {
 //048 246
 };
 
-end = (itens) => {
-  itens.footer.text = '';
-  return;
+end = () => {
+  all[chan.id] = undefined;
 };
 
 //------------------------------------------------
 
-module.exports.run = async (all) => {
-  //Simplifica variaveis
-  client = all.client;
-  message = all.message;
-  ativo = all.ativo;
-  channel = message.channel;
-  args = all.args;
-  user = message.author;
-
-  if (!ativo) {
-    invited = args[1];
-    players = [user.id, invited.slice(2, 20)]
-    if (!invited.startsWith('<@')) {
-      message.reply('Falta um usuário para jogar junto');
-      return;
-    };
-
-    //Prepara a mensagem do convite
-    itens.desc = `<@${user.id}> desafia ${invited} para um jogo da velha.
-${invited}, reaja à esta mensagem com 👍 para aceitar, ou com 👎 para recusar o desafio.`,
-    answ = await channel.send({ embeds: [embedMess(itens)]});
-    var like = await answ.react("👍");
-    var dislike = await answ.react("👎");
-
-    const filter = (reaction, user) => {
-      let reactions = ["👍", "👎"];
-      return reactions.includes(reaction.emoji.name) && user.id == invited.slice(2, 20);
-    };
-
-    answ.awaitReactions({ filter: filter, max: 1, time: 60_000, errors: ['time'] })
-     .then(async collected => {
-      if (collected.first().emoji.name === '👎') {
-        itens.title = 'Convite recusado!';
-        itens.desc = `${invited} recusou o desafio!`;
-        itens.footer.text = ':(';
-        await like.remove();
-        await dislike.remove();
-        answ.edit({ embeds: [embedMess(itens)]});
-      } else {
-        all.ativos[message.channelId] = {};
-        all.ativos[message.channelId].servico = '#';
-        itens.title = 'Jogo da velha';
-        itens.desc = textGrade(grade);
-        itens.footer.text = '';
-        await like.remove();
-        await dislike.remove();
-        answ.edit({ embeds: [embedMess(itens)]});
-      }
-     })
-     .catch(async err => {
-      itens.title = 'Que demora!';
-      itens.desc = 'O desafio foi cancelado!';
-      itens.footer.text = '(×_×)';
-      await like.remove();
-      await dislike.remove();
-      answ.edit({ embeds: [embedMess(itens)]});
-      end(itens);
-     });
+module.exports.run = async (message, args, chan) => {
+  if (all[chan.id]) {
+    src = all[chan.id];
   } else {
-    if (!players.includes(message.author.id)) return;
-    let pos = args[0].slice(config.prefix.length);
-    if (!(0 < pos && pos < 10)) {
-      message.delete();
-      return;
-    };
-    if (!second && first && message.author.id != first) {
-      var second = message.author.id;
-    };
-    if (!first) {
-      var first = message.author.id;
-    };
-    grade[pos - 1] = rodadas[rodada];
-    rodada++;
-    itens.desc = textGrade(grade);
-    message.delete();
-    answ.edit({ embeds: [embedMess(itens)]});
-  }
+    all[chan.id] = {};
+    src = all[chan.id];
+  };
+
+  if (src.ativo) return;
+
+  await chan.guild.members.fetch(args[1].slice(2, 20))
+   .then(invited => {
+     if (!invited) {
+       message.reply('Este usuário não está disponível');
+       return;
+     };
+   })
+   .catch(console.error);
+
+  src.userId = message.author.id;
+  src.invited = args[1];
+  src.players = [src.userId, src.invited.slice(2, 20)]
+  src.first = src.players[0];
+  src.second = src.players[1];
+
+  
+
+  //Prepara a mensagem do convite
+  src.itens.desc = `${src.invited}, <@${src.userId}> quer jogar jogo da velha com você.
+Reaja com 👍 para aceitar, ou com 👎 para recusar.`;
+  src.answ = await chan.send({ embeds: [embedMess(src.itens)]});
+  src.like = await src.answ.react("👍");
+  src.dislike = await src.answ.react("👎");
+
+  await src.answ.awaitReactions({ filter: filter, max: 1, time: 60_000, errors: ['time'] })
+   .then(async collected => {
+     let reaction = collected.first().emoji.name;
+     switch (reaction) {
+       case '👎':
+         src.itens.title = 'Convite recusado!';
+         src.itens.desc = `${invited} não quer jogar.`;
+         src.itens.footer.text = ':(';
+         await src.dislike.remove();
+         await src.like.remove();
+         src.answ.edit({ embeds: [embedMess(src.itens)]});
+         console.log('caiu no deslike');
+         return;
+       break;
+     };
+   })
+   .catch(async err => {
+     src.itens.title = 'Que demora!';
+     src.itens.desc = 'O desafio foi cancelado!';
+     src.itens.footer.text = '(×_×)';
+     await src.dislike.remove();
+     await src.like.remove();
+     src.answ.edit({ embeds: [embedMess(src.itens)]});
+     end();
+     return;
+   });
+
+   console.log("caiu no comeco");
+
+   //Que comece o jogo
+   src.itens.title = 'Jogo da velha';
+   src.itens.desc = textGrade(src.grade);
+   src.itens.footer.text = '';
+   await src.dislike.remove();
+   await src.like.remove();
+   src.answ.edit({ embeds: [embedMess(src.itens)]});
+
+   src.collector = chan.createMessageCollector({ filter: filter, time: inMili('00:06:40') });
+   src.collector.on('collect', async m => {
+     if (!src.players.includes(m.author.id)) return;
+
+     if (m.author.id == src.first) {
+       let sym = 'O';
+     } else {
+       let sym = 'X';
+     };
+     if (sym != rodadas(rodada)) return;
+
+     let content = m.content.toLowerCase();
+     let args = content.slice(prefix.length).trim().split(' ');
+     let pos = args[0];
+
+     if (!(0 < pos && pos < 10)) {
+       m.delete();
+       return;
+     };
+
+     src.grade[pos - 1] = rodadas[rodada];
+     src.rodada++;
+     src.itens.desc = textGrade(src.grade);
+     await m.delete();
+     src.answ.edit({ embeds: [embedMess(src.itens)]});
+   });
 };

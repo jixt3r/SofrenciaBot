@@ -30,9 +30,9 @@ module.exports.capit = function() {
   return string[0].toUpperCase() + string.slice(1).toLowerCase();
 };
 
-module.exports.random = function(n) {
-  let max = n + 1;
-  return Math.floor(Math.random() * max);
+module.exports.random = (max) => {
+  let imp = max + 1;
+  return Math.floor(Math.random() * imp);
 };
 
 module.exports.remoji = function(mess, emoji, user) {

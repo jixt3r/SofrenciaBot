@@ -1,23 +1,32 @@
 const { embedMess, capit } = require('../files/funcs.js');
 const config = require('../config.json');
+const prefix = config.prefix;
 const ajudas = {
-  geral: '• Os comandos devem começar com "**' + config.prefix + '**";\n\n' +
-         '• Pode usar letras maiúsculas ou minúscula sem problemas.\n\n' +
-         '• Comandos: **Forca**. (Só tem esse)\n\n' +
-         '• Para ver a ajuda de um comando use o nome do comando depois de **<prefixo>.ajuda**.',
+  geral: `• Os comandos devem começar com **${prefix}**;
 
-  forca: '• Para iniciar o jogo use o comando **forca**;\n\n' +
-         '• Para tentar uma letra use **<prefixo>.letra**;\n' +
-         '- **Exemplo**: Use **' + config.prefix + 'a** para tentar a letra **A**;\n\n' +
-         '• Para vencer é necessário tentar a palavra certa. Se acertar todas as letras sem tentar a palavra, você perde.\n\n' +
-         '• Para tentar uma palavra use **<prefixo>.palavra**;\n' +
-         '- **Exemplo**: Use **' + config.prefix + 'porta** para tentar a palavra **porta**;\n\n' +
-         '• Se usar uma palavra de tamanho diferente da palavra a ser descoberta, a primeira letra será considerada como tentativa;\n' +
-         '- **Exemplo**: Se a palavra a ser descoberta for **carreta** e a tentativa for **barro** a letra considerada será **B**;\n\n' +
-         '• Para pedir uma dica use o comando **dica**;\n\n' +
-         `• Se tiverem muitas mensagens após a mensagem da forca, use **${config.prefix}up** para reenviar a mensagem;\n\n` +
-         '• O limite de tempo do jogo é **6 minutos e 40s**, se chegar à isso o jogador perde;\n\n' +
-         '• Para terminar o jogo use o comando **end**.'
+• Pode usar letras maiúsculas ou minúsculas sem problemas;
+
+• Comandos disponíveis: **Forca, send, reply**;
+
+• Para ver a ajuda de um comando use o nome do comando depois de **${prefix}ajuda**.`,
+
+  forca: `• Para iniciar o jogo use o comando **forca**;
+
+• Para tentar uma letra use **${prefix}letra**;
+   - **Exemplo**: Use **${prefix}a** para tentar a letra **A**;
+
+• Para vencer é necessário tentar a palavra certa. Se acertar todas as letras sem tentar a palavra, você perde;
+
+• Para tentar uma palavra use **${prefix}palavra**;
+   - **Exemplo**: Use **${prefix}porta** para tentar a palavra **porta**;
+
+• Para pedir uma dica use **${prefix}dica**;
+
+• Se tiverem muitas mensagens após a mensagem da forca, use **${prefix}up** para reenviar a mensagem;
+
+• O limite de tempo do jogo é **6 minutos e 40s**, se chegar à isso o jogador perde;
+
+• Para terminar o jogo use **${prefix}end**.`
 };
 
 String.prototype.capit = capit;
@@ -55,16 +64,14 @@ var itens = {
 
 //------------------------------------------------
 
-module.exports.run = (all) => {
-  args = all.args;
-  message = all.message;
+module.exports.run = (message, args, chan, content) => {
   if (args.length == 1) {
-    itens.title = 'Ajuda'
-    itens.desc = ajudas.geral;
-    message.channel.send({ embeds: [embedMess(itens)]});
-  return;
-  }
-  itens.title = 'Ajuda sobre **' + args[1].capit() + '**';
+   itens.title = 'Ajuda'
+   itens.desc = ajudas.geral;
+   chan.send({ embeds: [embedMess(itens)]});
+   return;
+  };
+  itens.title = `Ajuda sobre **${args[1].capit()}**`;
   itens.desc = ajudas[args[1].toLowerCase()];
-  message.channel.send({ embeds: [embedMess(itens)]});
-} //fecha o modulo.exports
+  chan.send({ embeds: [embedMess(itens)]});
+} //Fecha o module.exports

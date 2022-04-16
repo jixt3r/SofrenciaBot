@@ -1,13 +1,17 @@
-const express = require('express');
-const config = require('./config.json');
+
+//-------------------Variaveis------------------------
+
+require('dotenv/config');
 const { inMili } = require('./files/funcs.js');
 const { Client, Intents } = require('discord.js');
-require('dotenv/config');
+const { prefix } = require('./config.json');
+const express = require('express');
 const app = express();
 const ForcaBot = process.env.FORCABOT;
 const BotTestes = process.env.TESTESBOT;
-const Bot = [BotTestes, ForcaBot];
-var usero;
+const Bots = [BotTestes, ForcaBot];
+var forca;
+var soccer;
 var all = {
   client: new Client({ intents: [
     Intents.FLAGS.GUILDS,
@@ -15,8 +19,7 @@ var all = {
     Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
     Intents.FLAGS.DIRECT_MESSAGES]
   }),
-  ativos: {},
-  dm: null
+  ativos: {}
 };
 const client = all.client;
 
@@ -29,23 +32,13 @@ const client = all.client;
 //"DIRECT_MESSAGE_REACTIONS"
 //"DIRECT_MESSAGE_TYPING" "GUILD_SCHEDULED_EVENTS"
 
-const filter = (m) => {
-      return m.author == '393094770794299392' && m.content.toLowerCase().startsWith('send');
+//-------------------Functions------------------------
+
+filter = m => {
+  return m.content.toLowerCase().startsWith(prefix);
 };
 
-all.hear = async (a) => { //cria escutador
-     //console.log('arroz');
-     let dm = all.dm;
-     let dmCollector = dm.createMessageCollector({ filter, time: inMili('36:00:00') });
-     dmCollector.on("collect", message => {
-       let text = message.content.split('=');
-       let channel = all.channelToSend;
-       channel.send(text[1]);
-     });
-     dmCollector.on("end", collected => {
-       all.hear();
-     });
-};
+//---------------------Codigo-------------------------
 
 app.get("/", (request, response) => {
   const ping = new Date();
@@ -56,61 +49,57 @@ app.get("/", (request, response) => {
 
 app.listen(8080) // Recebe solicitações que o deixa online
 
-client.on('ready', (client) => {
+client.on('ready', async (client) => {
   console.log('\n- Bot pronto. Manda bala!');
-});
+
+  client.channels.fetch('953373127516246017')
+   .then(channel => forca = channel)
+   .catch(console.error);
+
+  client.channels.fetch('947163868822646824')
+   .then(channel => soccer = channel)
+   .catch(console.error);
+
+//  await client.guilds.fetch('953373127046467585')
+//   .then(async guild => {
+//     await guild.members.fetch('393094770794299392')
+//      .then(async member => {
+//
+//      })
+//      .catch(console.error);
+//   })
+//   .catch(console.error);
+
+}); //Fecha client.on ready
 
 client.on('messageCreate', async (message) => {
-   //console.log(chan.lastMessage);
-   //if (message.author.bot) console.log(message.embeds[0].fields[0]);
-   if (message.author.bot) return;
-   var channel = message.channel;
-   if (message.content.startsWith('.')) {
-     try {
-       let commandFile = require('./commands/soccer.js');
-       return commandFile.run(message);
-     } catch (err) {
-       channel.send('Quebrou o bot');
-       throw err;
-       console.log("-- Erro no soccer!");
-     }
-   };
-    if (!(message.content.startsWith(config.prefix.toLowerCase()) || message.content.startsWith(config.prefix.toUpperCase()))) return;
+  //if (message.author.bot) console.log(message.embeds[0].fields[0]);
+  //console.log(message);
+  if (message.author.bot) return;
+  let chan = message.channel;
+  content = message.content.toLowerCase();
 
-    all.message = message;
-    all.args = message.content.split(' ');
+  if (content.startsWith('.')) {
+    try {
+      let commandFile = require('./commands/soccer.js');
+      return commandFile.run(message);
+    } catch (err) {
+      console.log("-- Erro no soccer!");
+      throw err;
+    };
+  };
 
-    if (all.ativos[message.channelId] == undefined) {
-      all.ativo = false;
-    } else {
-      all.ativo = true;
-    }
+  if (!(content.startsWith(prefix))) return;
 
-    if (all.ativo == false) {
-    //Se nao estiver ativo
-      let command = all.args[0].slice(config.prefix.length).toLowerCase();
-      try {
-        let commandFile = require('./commands/' + command + '.js');
-        return commandFile.run(all);
-      } catch (err) {
-          channel.send('Quebrou o bot');
-          console.log('\n- Erro1: ' + err);
-          //throw err;
-      }
-    } else {
-    //Se estiver ativo
-        try {
-          let command = all.args[0].slice(config.prefix.length).toLowerCase();
-          //let command = all.ativos[message.channelId].servico;
-          let commandFile = require('./commands/' + command + '.js');
-          return commandFile.run(all);
-        } catch (err) {
-            let command = all.ativos[message.channelId].servico;
-            let commandFile = require('./commands/' + command + '.js');
-            return commandFile.run(all);
-            //console.error('\n- Erro2:' + err);
-        }
-    }
+  args = content.slice(prefix.length).trim().split(' ');
+  let act = args[0];
+  try {
+    let commandFile = require(`./commands/${act}.js`);
+    return commandFile.run(message, args, chan, content, forca);
+  } catch (err) {
+    console.error('\n- Erro1: ' + err);
+    //throw err;
+  };
 });
 
-client.login(Bot[0]); //Ligando o Bot caso ele consiga acessar o token
+client.login(process.env['TOKEN']); //Ligando o Bot caso ele consiga acessar o token
