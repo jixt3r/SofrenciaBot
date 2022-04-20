@@ -3,7 +3,7 @@
 
 require('dotenv/config');
 const { inMili } = require('./files/funcs.js');
-const { Client, Intents } = require('discord.js');
+const { Client, Intents, MessageActionRow } = require('discord.js');
 const { prefix } = require('./config.json');
 const express = require('express');
 const app = express();
@@ -13,11 +13,17 @@ const Bots = [BotTestes, ForcaBot];
 var forca;
 var soccer;
 var all = {
-  client: new Client({ intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-    Intents.FLAGS.DIRECT_MESSAGES]
+  client: new Client({
+    presence: {
+      activities: [
+        { name: 'A galera do SOFRENCIA y SOLIDÃO', type: 'WATCHING', }
+      ]
+    },
+    intents: [
+      Intents.FLAGS.GUILDS,
+      Intents.FLAGS.GUILD_MESSAGES,
+      Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+      Intents.FLAGS.DIRECT_MESSAGES]
   }),
   ativos: {}
 };
@@ -33,10 +39,6 @@ const client = all.client;
 //"DIRECT_MESSAGE_TYPING" "GUILD_SCHEDULED_EVENTS"
 
 //-------------------Functions------------------------
-
-filter = m => {
-  return m.content.toLowerCase().startsWith(prefix);
-};
 
 //---------------------Codigo-------------------------
 
@@ -56,9 +58,9 @@ client.on('ready', async (client) => {
    .then(channel => forca = channel)
    .catch(console.error);
 
-  client.channels.fetch('947163868822646824')
-   .then(channel => soccer = channel)
-   .catch(console.error);
+//  client.channels.fetch('947163868822646824')
+//   .then(channel => soccer = channel)
+//   .catch(console.error);
 
 //  await client.guilds.fetch('953373127046467585')
 //   .then(async guild => {
@@ -74,8 +76,9 @@ client.on('ready', async (client) => {
 
 client.on('messageCreate', async (message) => {
   //if (message.author.bot) console.log(message.embeds[0].fields[0]);
-  //console.log(message);
+  //console.log(message.interaction);
   if (message.author.bot) return;
+
   let chan = message.channel;
   content = message.content.toLowerCase();
 
@@ -102,4 +105,4 @@ client.on('messageCreate', async (message) => {
   };
 });
 
-client.login(process.env['TOKEN']); //Ligando o Bot caso ele consiga acessar o token
+client.login(Bots[0]); //Ligando o Bot caso ele consiga acessar o token

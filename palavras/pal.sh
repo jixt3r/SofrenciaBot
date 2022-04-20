@@ -12,12 +12,22 @@ while [ $run = true ]; do
   read value;
   tema=`echo $value | cut -f1 -d' '`
   palavra=`echo $value | cut -f2 -d' '`
-  if [ "$tema" ]; then
-    repeated=`cat $dir | grep "$tema" | grep "$palavra"`
+
+  if [ ! "$tema" -o ! "$palavra"]; then
+    echo '\n- '
   fi;
+
+  #Confere se a palavra fornecida já está no tema
+  #fornecido
+  repeated=`cat $dir | grep $tema | grep $palavra`
+
+  #Se a palavra já está no arquivo
   if [ "$repeated" ]; then
     echo '\n- Essa palavra já está no arquivo';
   else
+    #Se a palavra não estiver no arquivo
+
+    #Se 
     if [ ! "$palavra" ]; then
       echo '- Deseja encerrar?';
       read resposta;
@@ -35,10 +45,10 @@ while [ $run = true ]; do
     else
       case $tema in
       pais)
-      palPais=$palPais$palavra;;
+      palPais=$palPais,$palavra;;
 
       animal)
-      palAnimal=$palAnimal$palavra;;
+      palAnimal=$palAnimal,$palavra;;
 
       comida)
       palComida=$palComida,$palavra;;

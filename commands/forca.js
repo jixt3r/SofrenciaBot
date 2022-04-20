@@ -1,6 +1,5 @@
-const { embedMess, inMili, random } = require('../files/funcs.js');
-const config = require('../config.json');
-const prefix = config.prefix;
+const { inMili, random } = require('../files/funcs.js');
+const { prefix } = require('../config.json');
 const pList = require('../files/ultra.json');
 var src = {};
 var all = {};
@@ -10,11 +9,10 @@ all.temas = ["Animal", "País", "Futebol", "Comida",
         "Parte-do-corpo", "Lugar", "ind"
 ];
 all.palavras = pList.palavras.split(',');
-all.starts = [prefix.toUpperCase(), prefix.toLowerCase()];
-const filter = m => all.starts.includes(m.content.substr(0, prefix.length));
+const filter = m => m.content.toLowerCase().startsWith(prefix);
 
-//Passa as informacoes do "pList" para o objeto
-//"palavras" num formato util
+//Passa as palavras do "pList" para o objeto
+//"palavras" no formato array
 for(let i = 0; i < all.temas.length; i++){
   let tema = all.temas[i];
   all.palavras[tema] = pList[tema].split(',');
@@ -51,16 +49,17 @@ fim = (all, chanId) => {
 gameOver = async (src) => {
   src.itens.color = colorIs(src.chances);
   src.itens.title = ':x: FIM DE JOGO!';
-  src.itens.desc = 'Acabaram as tentativas';
+  src.itens.description = 'Acabaram as tentativas';
   src.itens.footer.text = ':(';
-  try {
-    await src.msgdica.delete()
-  } catch (err) {}
-  src.answ.edit({ embeds: [embedMess(src.itens)] });
+  src.answ.edit({ embeds: [ src.itens ] });
   //console.log('Acabou o timeout do canal ' + src.message.channelId);
   clearTimeout(src.death);
   src.death = undefined;
   fim(all, src.chanId)
+};
+
+title = (src) => {
+  return `FORCA | RESTAM ${src.chances} ERROS`;
 };
 
 foram = (src) => {
@@ -74,12 +73,9 @@ foram = (src) => {
 vitoria = async (src, author) => {
   src.itens.color = colorIs(5);
   src.itens.title = ':white_check_mark: PALAVRA DESCOBERTA!';
-  src.itens.desc = `:trophy: <@${author.id}> acertou a palavra!`;
+  src.itens.description = `:trophy: <@${author.id}> acertou a palavra!`;
   src.itens.footer.text = '';
-  try {
-    await src.msgdica.delete()
-  } catch (err) {}
-  src.answ.edit({ embeds: [embedMess(src.itens)] });
+  src.answ.edit({ embeds: [ src.itens ] });
   clearTimeout(src.death);
   fim(all, src.chanId);
 };
@@ -120,9 +116,9 @@ createDeath = (src) => {
   src.death = setTimeout(function(src) {
     src.itens.color = colorIs(0);
     src.itens.title = ':x: FIM DE JOGO!';
-    src.itens.desc = ':clock4: Acabou o tempo';
+    src.itens.description = ':clock4: Acabou o tempo';
     src.itens.footer.text = '';
-    src.answ.edit({ embeds: [embedMess(src.itens)]});
+    src.answ.edit({ embeds: [ src.itens ]});
     //console.log(`Chegou ao fim o death do canal "${src.chan.name}"`);
     fim(all, src.chanId);
   }, inMili('00:06:40'), src);
@@ -135,12 +131,13 @@ hasChances = async(src, m) => {
     src.chances--;
     src.jaErrou = true;
     src.itens.color = colorIs(src.chances);
-    src.itens.title = 'RESTAM ' + src.chances + ' ERROS';
-    src.itens.desc = segredo(src);
-    src.itens.footer.text = 'Já foram: ' + foram(src);
+    src.itens.title = title(src);
+    src.itens.description = segredo(src);
+    src.itens.footer.text = `${src.dica}
+Já foram: ${foram(src)}`;
     await m.delete()
      .catch(console.error);
-    src.answ.edit({ embeds: [embedMess(src.itens)] });
+    src.answ.edit({ embeds: [ src.itens ] });
   } else {
     //Se acabarem as tentativas
     await m.delete()
@@ -156,18 +153,19 @@ noAdv = (all, chanId) => {
     //sem adivinhar
     src.itens.color = colorIs(0);
     src.itens.title = ':x: FIM DE JOGO';
-    src.itens.desc = 'Ninguém adivinhou a palavra';
+    src.itens.description = 'Ninguém adivinhou a palavra';
     src.itens.footer.text = ':(';
-    src.answ.edit({ embeds: [embedMess(src.itens)] });
+    src.answ.edit({ embeds: [ src.itens ] });
     fim(all, chanId);
   } else {
     //se ainda tiverem letras nao descobertas
     src.itens.color = colorIs(src.chances);
-    src.itens.title = 'RESTAM ' + src.chances + ' ERROS';
+    src.itens.title = title(src);
     if (src.jaErrou) {
-      src.itens.footer.text = 'Já foram: ' + foram(src);
+      src.itens.footer.text = `${src.dica}
+Já foram: ${foram(src)}`;
     };
-    src.itens.desc = segredo(src);
+    src.itens.description = segredo(src);
   };
 };
 
@@ -183,6 +181,7 @@ module.exports.run = async (message, args, chan) => {
   if (src.ativo) return;
 
   src.ativo = true;
+  src.dica = '';
   src.acertos = [];
   src.letras = [];
   src.chances = 5;
@@ -192,7 +191,6 @@ module.exports.run = async (message, args, chan) => {
   src.chanId = chan.id;
   //src.answ
   //src.palpite
-  //src.msgdica
   //src.palavra
   //src.itens
   //src.collector
@@ -216,14 +214,14 @@ module.exports.run = async (message, args, chan) => {
   //enviadas
   src.itens = {
     color: colorIs(src.chances),
-    title: `RESTAM ${src.chances} ERROS`,
-    desc: segredo(src),
+    title: title(src),
+    description: `${segredo(src)}`,
     footer: {
-      text: ''
+      text: ``
     }
   };
   createDeath(src);
-  src.answ = await chan.send({ embeds: [embedMess(src.itens)] });
+  src.answ = await chan.send({ embeds: [ src.itens ] });
   src.collector = chan.createMessageCollector({ filter, time: inMili('00:06:40')});
   //Oq vai acontecer com cada mensagem que for
   //enviada durante a forca
@@ -239,13 +237,9 @@ module.exports.run = async (message, args, chan) => {
         //Se for o comando end
         src.itens.color = '#c0c0c0';
         src.itens.title = 'JOGO FINALIZADO';
-        src.itens.desc = '';
-        src.itens.footer.text = '';
-        try {
-          await src.msgdica.delete()
-           .catch(console.error);
-        } catch (err) {}
-        src.answ.edit({ embeds: [embedMess(src.itens)]});
+        src.itens.description = '';
+        src.itens.footer.text = ``;
+        src.answ.edit({ embeds: [ src.itens ]});
         clearTimeout(src.death);
         fim(all, chan.id);
         return;
@@ -253,25 +247,25 @@ module.exports.run = async (message, args, chan) => {
 
       case 'dica':
         await m.delete();
-        try {
-          await src.msgdica.delete()
-           .catch(console.error);
-        } catch (err) {}
+        if (src.dica) return;
         if (src.tema == 'ind') {
-          src.msgdica = await chan.send({ embeds: [{color: colorIs(src.chances), description: '**Essa palavra não tem dica.**' }]});
+          src.dica = 'Essa palavra não tem dica. ;-;';
         } else {
-          src.msgdica = await chan.send({ embeds: [{color: colorIs(src.chances), description: `**Dica: ${src.tema.replace(/-/g,' ')}**`}]});
+          src.dica = `Dica: ${src.tema.replace(/-/g,' ')}`;
         };
+        src.itens.footer.text = `${src.dica}
+${src.itens.footer.text.trim()}`;
+        src.answ.edit({ embeds: [ src.itens ] });
         return;
       break;
 
       case 'up':
         await m.delete();
         try {
-          await src.answ.delete()
+          src.answ.delete()
            .catch(console.error);
         } catch (err) {}
-        src.answ = await chan.send({ embeds: [embedMess(src.itens)] });
+        src.answ = await chan.send({ embeds: [ src.itens ] });
         return;
     };
 
@@ -327,12 +321,13 @@ module.exports.run = async (message, args, chan) => {
           src.chances--;
           upSegredo(src);
           src.itens.color = colorIs(src.chances);
-          src.itens.title = 'RESTAM ' + src.chances + ' ERROS';
+          src.itens.title = title(src);
           src.itens.desc = segredo(src);
-          src.itens.footer.text = 'Já foram: ' + foram(src);
+          src.itens.footer.text = `${src.dica}
+Já foram: ${foram(src)}`;
           await m.delete()
            .catch(console.log("-- err 3400"));
-          src.answ.edit({ embeds: [embedMess(src.itens)] });
+          src.answ.edit({ embeds: [ src.itens ] });
         } else {
           //se acabarem as chances
           await m.delete()
@@ -342,6 +337,6 @@ module.exports.run = async (message, args, chan) => {
         };
       }; //fecha o else do if palpite = palavra
     }; //Fecha o if tamanhos iguais
-    src.answ.edit({ embeds: [embedMess(src.itens)]});
+    src.answ.edit({ embeds: [ src.itens ]});
   }); //Fecha o collector
 }; //fecha o modulo.exports
