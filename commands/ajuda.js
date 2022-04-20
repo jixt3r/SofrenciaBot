@@ -29,13 +29,14 @@ const ajudas = {
 • Para terminar o jogo use **${prefix}end**`,
 
   velha: `
-• Para iniciar o jogo use o comando **#** e mencione um usuário junto do comando para jogar com ele. Pode ser vc mesmo
+• Para iniciar o jogo use o comando **#** e mencione um usuário junto do comando para jogar com ele. Pode ser você mesmo
 
 • O usuário mencionado terá que aceitar o convite de jogo na mensagem que aparecerá em até 1 minuto
 
 • O primeiro a jogar é quem fez o convite
 
-• Para posicionar os símbolos use **${prefix}NUMERODAPOSICAO**
+• Para posicionar os símbolos use **${prefix}NUMERODAPOSIÇÃO**
+   - Substitua NUMERODAPOSIÇÃO pelo numero do quadrado que escolheu
 
 • A partida dura no máximo **6 minutos e 40s**, se chegar à isso o jogo acaba
 
@@ -97,7 +98,7 @@ module.exports.run = async (message, args, chan, content) => {
   if (all[user.id]) {
     src = all[user.id];
   } else {
-    all[chan.id] = {};
+    all[user.id] = {};
     src = all[user.id];
   };
   src.user = user;
