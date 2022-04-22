@@ -75,7 +75,7 @@ client.on('interactionCreate', async i => {
   if (i.commandName === 'send') {
     await i.channel.send(i.options.getString('mensagem'));
     await i.reply('Success!')
-     .delete();
+     .then(m => m.delete());
   };
 });
 
@@ -111,4 +111,4 @@ client.on('messageCreate', async (message) => {
 });
 
 client.login(process.env['TOKEN']);
-//client.login(Bots[0]); //Ligando o Bot caso ele consiga acessar o token
+//client.login(Bots[1]); //Ligando o Bot caso ele consiga acessar o token
