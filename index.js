@@ -64,8 +64,9 @@ client.on('ready', async (client) => {
   //client.channels.fetch('947163868822646824')
   // .then(channel => soccer = channel);
 
-  client.application.commands.fetch()
-   .then(col => print(`- Existem ${col.size} comandos padrões no bot\n`));
+  //console.log(await client.application.fetch())
+
+  //client.application.commands.fetch().then(col => print(`- Existem ${col.size} comandos padrões no bot\n`));
 
 }); //Fecha client.on ready
 
@@ -74,8 +75,8 @@ client.on('interactionCreate', async i => {
 
   if (i.commandName === 'send') {
     await i.channel.send(i.options.getString('mensagem'));
-    await i.reply('Success!')
-     .then(m => m.delete());
+    await i.reply('Success!');
+    await i.deleteReply();
   };
 });
 
@@ -110,5 +111,5 @@ client.on('messageCreate', async (message) => {
   };
 });
 
-client.login(process.env['TOKEN']);
-//client.login(Bots[1]); //Ligando o Bot caso ele consiga acessar o token
+//client.login(process.env['TOKEN']);
+client.login(Bots[1]); //Ligando o Bot caso ele consiga acessar o token

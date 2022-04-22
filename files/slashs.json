@@ -1,4 +1,8 @@
 {
+  "reply": {
+    "name": "reply",
+    "type": "MESSAGE"
+  },
   "send": {
     "name": "send",
     "description": "Envia uma mensagem através do bot",
