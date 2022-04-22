@@ -5,13 +5,14 @@ require('dotenv/config');
 const { inMili } = require('./files/funcs.js');
 const { Client, Intents, MessageActionRow } = require('discord.js');
 const { prefix } = require('./config.json');
+const slashs = require('./files/slashs.json');
 const express = require('express');
 const app = express();
-const ForcaBot = process.env.FORCABOT;
+const SofreBot = process.env.SOFREBOT;
 const BotTestes = process.env.TESTESBOT;
-const Bots = [BotTestes, ForcaBot];
-var forca;
-var soccer;
+const Bots = [BotTestes, SofreBot];
+//var forca;
+//var soccer;
 var all = {
   client: new Client({
     presence: {
@@ -40,6 +41,10 @@ const client = all.client;
 
 //-------------------Functions------------------------
 
+print = (text) => {
+  console.log(text);
+};
+
 //---------------------Codigo-------------------------
 
 app.get("/", (request, response) => {
@@ -52,31 +57,31 @@ app.get("/", (request, response) => {
 app.listen(8080) // Recebe solicitações que o deixa online
 
 client.on('ready', async (client) => {
-  console.log('\n- Bot pronto. Manda bala!');
+  console.log('\n- Bot pronto. Manda bala!\n');
+  //client.channels.fetch('953373127516246017')
+  // .then(channel => forca = channel);
 
-  client.channels.fetch('953373127516246017')
-   .then(channel => forca = channel)
-   .catch(console.error);
+  //client.channels.fetch('947163868822646824')
+  // .then(channel => soccer = channel);
 
-//  client.channels.fetch('947163868822646824')
-//   .then(channel => soccer = channel)
-//   .catch(console.error);
-
-//  await client.guilds.fetch('953373127046467585')
-//   .then(async guild => {
-//     await guild.members.fetch('393094770794299392')
-//      .then(async member => {
-//
-//      })
-//      .catch(console.error);
-//   })
-//   .catch(console.error);
+  client.application.commands.fetch()
+   .then(col => print(`- Existem ${col.size} comandos padrões no bot\n`));
 
 }); //Fecha client.on ready
 
+client.on('interactionCreate', async i => {
+  if (!i.isCommand()) return;
+
+  if (i.commandName === 'send') {
+    await i.channel.send(i.options.getString('mensagem'));
+    await i.reply('Success!')
+     .delete();
+  };
+});
+
 client.on('messageCreate', async (message) => {
-  //if (message.author.bot) console.log(message.embeds[0].fields[0]);
-  //console.log(message.interaction);
+  //if (message.author.bot) console.log();
+
   if (message.author.bot) return;
 
   let chan = message.channel;
@@ -105,4 +110,5 @@ client.on('messageCreate', async (message) => {
   };
 });
 
-client.login(Bots[0]); //Ligando o Bot caso ele consiga acessar o token
+client.login(process.env['TOKEN']);
+//client.login(Bots[0]); //Ligando o Bot caso ele consiga acessar o token

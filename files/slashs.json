@@ -1,0 +1,13 @@
+{
+  "send": {
+    "name": "send",
+    "description": "Envia uma mensagem através do bot",
+    "type": "CHAT_INPUT",
+    "options": [{
+      "type": "STRING",
+      "name": "mensagem",
+      "description": "Mensagem que será enviada pelo bot.",
+      "required": true
+    }]
+  }
+}
