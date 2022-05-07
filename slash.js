@@ -1,54 +1,92 @@
+
+let modes = [ 'see', 'add', 'del' ];
+let mode = process.argv[2];
+if (!modes.includes(mode)) return;
+
+slash = (name) => {
+  let file = require(`./slashs/${name}.js`);
+  return file.data;
+};
+
+adds = [ slash('ajuda'), slash('send') ];
+dels = [];
+
 require('dotenv/config');
 const { Client, Intents } = require('discord.js');
-const slashs = require('./files/slashs.json');
+
 const SofreBot = process.env.SOFREBOT;
 const BotTestes = process.env.TESTESBOT;
 const Bots = [BotTestes, SofreBot];
 
-print = (text) => {
-  console.log(text);
-};
-
-addComm = async (client, data) => {
-  await client.application.commands.fetch()
-   .then(async (col) => {
-     let comm = col.find(comm => comm.name == data.name);
-     if (comm) {
-       await comm.delete();
-       print('- Já havia um comando com este nome, ele foi deletado e substituído');
-     };
-   });
-  let cmd = client.application.commands.create(data);
-  print("- Comando, caralho!");
- return cmd;
-};
-
-delComm = async (client, name) => {
-  await client.application.commands.fetch()
-   .then(col => {
-     let take = col.find(comm => comm.name == name);
-     if (take) {
-      take.delete()
-       .then(print("\n- Comando deletado"));
-     } else {
-       print("- Não existe esse comando");
-     };
-   });
-};
-
-client = new Client({ intents: [
-      Intents.FLAGS.GUILDS,
-      Intents.FLAGS.GUILD_MESSAGES,
-      Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-      Intents.FLAGS.DIRECT_MESSAGES]
+const TOKEN = 'OTY5MzAxMDM5NTE1ODUyODgw.YmrZ8A.cQr3deDcH9yYuW29sfqBmZU7GHg';
+//Bots[0];
+const client = new Client({
+  intents: [
+    Intents.FLAGS.GUILDS,
+    Intents.FLAGS.GUILD_MESSAGES
+  ]
 });
 
-run = async () => {
-  await client.login(Bots[0]);
-  //addComm(client, slashs.reply);
-  //delComm(client, 'reply')
-  client.application.commands.fetch()
-   .then(col => print(col.size));
+main = async () => {
+  await client.login(TOKEN);
+  if (mode == 'see') {
+    await tem();
+    await client.destroy();
+    return;
+  };
+  if (mode == 'add') {
+    if (!adds) console.log('\n- adds está vazio');
+    await addComm(adds);
+  }
+  if (mode == 'del') {
+    if (!dels) console.log('\n- dels está vazio!');
+    await delComm(dels);
+  };
+  setTimeout( async () => {
+    await tem();
+    await client.destroy();
+  }, 1000);
 };
 
-run();
+tem = async () => {
+  await client.application.commands.fetch()
+   .then( col => {
+    console.log(`\n- Comandos existentes no bot: ${col.size}`);
+    col.each(comm => console.log(` • ${comm.name}`));
+   });
+};
+
+addComm = async (slashs) => {
+  await client.application.commands.fetch()
+   .then(async (col) => {
+     await slashs.forEach( async (val, ind, arr) => {
+       let comm = await col.find(comm => comm.name == val.name);
+       if (comm) {
+         await console.log(`\n- Um comando com o nome "${comm.name}" já está no bot`);
+         stop = true;
+       } else stop = false;
+       if (!stop) {
+         await client.application.commands.create(val);
+         await console.log(`\n- O comando "${val.name}" foi criado.`);
+       };
+     });
+   });
+};
+
+delComm = async (names) => {
+  await client.application.commands.fetch()
+   .then( async col => {
+     await names.forEach( async (val, ind, arr) => {
+       let take = await col.find(comm => comm.name === val);
+       if (take) {
+         await take.delete()
+          .then(console.log(`\n- O comando "${take.name}" foi deletado.`));
+       } else {
+         console.log(`\n- Não tem comando "${val}" no bot.`);
+       };
+     });
+   });
+  //setTimeout(tem, 6_400);
+};
+
+main();

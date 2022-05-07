@@ -1,7 +1,7 @@
 
-//------------------------------------------------
+//----------------------------------------------------
 
-module.exports.run = async (message, args, chan) => {
+exports.run = async (message, args, chan) => {
   if (message.type != 'REPLY') {
     message.reply('Você precisa responder à uma mensagem');
     return;
@@ -15,4 +15,4 @@ module.exports.run = async (message, args, chan) => {
      message.reply(reply);
    })
    .catch(console.error);
-} //fecha o modulo.exports
+}; //Fecha o exports.run

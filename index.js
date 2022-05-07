@@ -1,18 +1,30 @@
 
-//-------------------Variaveis------------------------
+//------------------ Variáveis ---------------------\\
 
 require('dotenv/config');
 const { inMili } = require('./files/funcs.js');
 const { Client, Intents, MessageActionRow } = require('discord.js');
+const { Collection } = require('@discordjs/collection');
+const fs = require('fs');
 const { prefix } = require('./config.json');
-const slashs = require('./files/slashs.json');
+cwd = process.cwd();
+const lashs = [ 'send', 'ajuda' ];
+let slashs = {};
+for (slash of lashs) {
+  slashs[slash] = require(`${cwd}/slashs/${slash}.js`);
+};
+const commands = [ '#', 'ajuda', 'discoin', 'embed',
+'forca', 'r1', 'reply', 'send' ];
+let comms = {};
+for (command of commands) {
+  comms[command] = require(`${cwd}/commands/${command}.js`);
+};
 const express = require('express');
 const app = express();
 const SofreBot = process.env.SOFREBOT;
 const BotTestes = process.env.TESTESBOT;
 const Bots = [BotTestes, SofreBot];
-//var forca;
-//var soccer;
+const snow = new RegExp('[0-9]{17}');
 var all = {
   client: new Client({
     presence: {
@@ -25,8 +37,7 @@ var all = {
       Intents.FLAGS.GUILD_MESSAGES,
       Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
       Intents.FLAGS.DIRECT_MESSAGES]
-  }),
-  ativos: {}
+  })
 };
 const client = all.client;
 
@@ -39,13 +50,35 @@ const client = all.client;
 //"DIRECT_MESSAGE_REACTIONS"
 //"DIRECT_MESSAGE_TYPING" "GUILD_SCHEDULED_EVENTS"
 
-//-------------------Functions------------------------
+//------------------- Funções ----------------------\\
 
 print = (text) => {
   console.log(text);
 };
 
-//---------------------Codigo-------------------------
+var tem = () => {
+  client.application.commands.fetch()
+   .then(col => {
+    console.log(`- Comandos no bot: ${col.size}`);
+    col.each(comm => print(` • ${comm.name}`))
+   });
+};
+
+var oGuilds;
+
+upGuilds = async () => {
+  oGuilds = await client.guilds.fetch()
+   .then(col => col.values());
+};
+
+filExists = async (file) => {
+  fs.readFile(file, 'utf-8', async (err, data) => {
+    if (!err) return;
+    await fs.writeFile(file, '{}', (err) => {})
+  });
+};
+
+//------------------- Código -----------------------\\
 
 app.get("/", (request, response) => {
   const ping = new Date();
@@ -53,63 +86,72 @@ app.get("/", (request, response) => {
   console.log(`Ping recebido às ${ping.getUTCHours()}:${ping.getUTCMinutes()}:${ping.getUTCSeconds()}`);
   response.sendStatus(200);
 });
-
 app.listen(8080) // Recebe solicitações que o deixa online
+
 
 client.on('ready', async (client) => {
   console.log('\n- Bot pronto. Manda bala!\n');
-  //client.channels.fetch('953373127516246017')
-  // .then(channel => forca = channel);
-
-  //client.channels.fetch('947163868822646824')
-  // .then(channel => soccer = channel);
-
-  //console.log(await client.application.fetch())
-
-  //client.application.commands.fetch().then(col => print(`- Existem ${col.size} comandos padrões no bot\n`));
-
-}); //Fecha client.on ready
-
-client.on('interactionCreate', async i => {
-  if (!i.isCommand()) return;
-
-  if (i.commandName === 'send') {
-    await i.channel.send(i.options.getString('mensagem'));
-    await i.reply('Success!');
-    await i.deleteReply();
+  tem();
+  await upGuilds();
+  for (oGuild of oGuilds) {
+    //await filExists(`./db/guilds/${oGuild.id}.nosql`);
+    comms['discoin'].init(await oGuild.fetch());
   };
 });
 
-client.on('messageCreate', async (message) => {
-  //if (message.author.bot) console.log();
 
-  if (message.author.bot) return;
+client.on('interactionCreate', async i => {
+  let msg = i.message;
+  let chan = i.channel;
 
-  let chan = message.channel;
-  content = message.content.toLowerCase();
-
-  if (content.startsWith('.')) {
-    try {
-      let commandFile = require('./commands/soccer.js');
-      return commandFile.run(message);
-    } catch (err) {
-      console.log("-- Erro no soccer!");
-      throw err;
-    };
+  if (i.isCommand()) {
+    let name = i.commandName;
+    if (!lashs.includes(name)) return;
+    return slashs[name].run(i);
   };
 
-  if (!(content.startsWith(prefix))) return;
+  if (i.isSelectMenu()) {
+    return comms['ajuda'].responsive(i, msg, chan);
+  };
 
-  args = content.slice(prefix.length).trim().split(' ');
+  if (i.channel.parent.name == 'Discoin') {
+    return comms['discoin'].responsive(i, msg, chan)
+  };
+
+});
+
+
+client.on('messageCreate', async (message) => {
+  //if (message.author.bot) return;
+  //let ref = await message.channel.messages.fetch(message.reference.messageId);
+  //console.log(ref.embeds[0]);
+  //let commandFile = require(`./i.js`);
+  //return commandFile.run(message);
+  let chan = message.channel;
+  if (snow.test(chan.topic)) {
+    try {
+      return comms['discoin'].responsive(null, message, chan);
+    } catch (err) {
+      return console.warn(`\n- Erro7: ${err}`);
+      //throw err;
+    };
+  };
+  if (message.author.bot) return;
+  let content = message.content.toLowerCase();
+  if (!content.startsWith(prefix)) return;
+  let args = content.slice(prefix.length).trim().split(' ');
   let act = args[0];
+  if (!commands.includes(act)) {
+    let del = async () => await message.delete();
+    return setTimeout(del, 1000);
+  };
   try {
-    let commandFile = require(`./commands/${act}.js`);
-    return commandFile.run(message, args, chan, content, forca);
+    comms[act].run(message, args, chan, content);
   } catch (err) {
-    console.error('\n- Erro1: ' + err);
+    console.warn(`\n- Erro1: ${err}`);
     //throw err;
   };
 });
 
-//client.login(process.env['TOKEN']);
-client.login(Bots[1]); //Ligando o Bot caso ele consiga acessar o token
+
+client.login(Bots[0]); //Ligando o Bot caso ele consiga acessar o token

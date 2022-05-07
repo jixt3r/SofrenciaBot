@@ -1,32 +1,56 @@
-const { inMili, random } = require('../files/funcs.js');
+const { inMili, random } = require('../files/funcs');
+const { MessageActionRow, MessageButton } = require('discord.js');
 const { prefix } = require('../config.json');
 const pList = require('../files/ultra.json');
-var src = {};
-var all = {};
-all.temas = ["Animal", "País", "Futebol", "Comida",
+var src;
+var tela = [];
+var forca = { palavras: {} };
+const temas = ["Animal", "País", "Futebol", "Comida",
             "Natureza", "Objeto", "Roupa", "Bebida",
               "Veículo", "Fruta", "Nome", "Profissão",
         "Parte-do-corpo", "Lugar", "ind"
 ];
-all.palavras = pList.palavras.split(',');
-const filter = m => m.content.toLowerCase().startsWith(prefix);
+var palavras = pList.palavras.split(',');
+const msgFilter = m => m.content.toLowerCase().startsWith(prefix);
+const compFilter = i => true;
 
 //Passa as palavras do "pList" para o objeto
 //"palavras" no formato array
-for(let i = 0; i < all.temas.length; i++){
-  let tema = all.temas[i];
-  all.palavras[tema] = pList[tema].split(',');
+for(let i = 0; i < temas.length; i++){
+  let tema = temas[i];
+  forca.palavras[tema] = pList[tema].split(',');
 };
+const letras = [ "a","b","c","d","e","f","g","h",
+                 "i","j","k","l","m","n","o","p",
+                 "q","r","s","t","u","v","w","x",
+                 "y","z"];
 
 //-------------------FUNCOES----------------------
 
-isLetra = (char) => {
-  if (!char) return;
-  let letras = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"];
-  return letras.includes(char);
+const setBut = () => {
+  for (l of letras) {
+    src.but[l] = new MessageButton({
+      label: l.toUpperCase(),
+      customId: l,
+      //emoji: null,
+      style: 'SECONDARY',
+    });
+  };
+  src.but.more = new MessageButton({
+    label: '...',
+    customId: 'more',
+    //emoji: "",
+    style: 'SECONDARY',
+  });
+  src.but.back = new MessageButton({
+    label: 'Voltar',
+    customId: 'more',
+    //emoji: "",
+    style: 'SECONDARY',
+  });
 };
 
-colorIs = (chances) => {
+const colorIs = (chances) => {
   let verde = '#00ffa2'; //#00a86b-Jade
   let amarelo = '#ffd700';
   let vermelho = '#ff2400';
@@ -39,30 +63,29 @@ colorIs = (chances) => {
   };
 };
 
-fim = (all, chanId) => {
-  let src = all[chanId];
-  src.collector.stop();
-  all[chanId] = undefined;
-  src.ativo = false;
+const fim = (chanId) => {
+  let src = forca[chanId];
+  src.msgCollector.stop();
+  src.iCollector.stop();
+  forca[chanId] = undefined;
 };
 
-gameOver = async (src) => {
+const gameOver = async (src) => {
   src.itens.color = colorIs(src.chances);
   src.itens.title = ':x: FIM DE JOGO!';
   src.itens.description = 'Acabaram as tentativas';
   src.itens.footer.text = ':(';
-  src.answ.edit({ embeds: [ src.itens ] });
+  src.answ.edit({ embeds: [ src.itens ], components: [] });
   //console.log('Acabou o timeout do canal ' + src.message.channelId);
   clearTimeout(src.death);
-  src.death = undefined;
-  fim(all, src.chanId)
+  fim(src.chanId)
 };
 
-title = (src) => {
+const title = () => {
   return `FORCA | RESTAM ${src.chances} ERROS`;
 };
 
-foram = (src) => {
+const foram = (src) => {
   let array = [];
   for (let i = 0; i < src.tentativas.length; i++) {
     array.push(' ' + src.tentativas[i].toUpperCase());
@@ -70,29 +93,30 @@ foram = (src) => {
   return array;
 };
 
-vitoria = async (src, author) => {
+const vitoria = async (src, author) => {
   src.itens.color = colorIs(5);
   src.itens.title = ':white_check_mark: PALAVRA DESCOBERTA!';
   src.itens.description = `:trophy: <@${author.id}> acertou a palavra!`;
   src.itens.footer.text = '';
-  src.answ.edit({ embeds: [ src.itens ] });
+  src.answ.edit({
+    embeds: [ src.itens ], components: [] });
   clearTimeout(src.death);
-  fim(all, src.chanId);
+  fim(src.chanId);
 };
 
-upAcertos = (src) => {
-  for (let i = 0; i < src.letras.length; i++) {
-    if (src.letras[i] == src.palpite) {
+const upAcertos = () => {
+  for (let i = 0; i < src.letrasNoRep.length; i++) {
+    if (src.letrasNoRep[i] == src.palpite) {
       src.acertos[i] = src.palpite;
     };
   };
 };
 
-segredo = (src) => {
+const segredo = () => {
   let segredo = '';
-  for(let i = 0; i < src.palavra.length; i++) {
-    if (src.acertos[i]) {
-      segredo = `${segredo}:regional_indicator_${src.acertos[i].toLowerCase()}: `;
+  for(l of src.letras) {
+    if (src.acertos.includes(l)) {
+      segredo = `${segredo}:regional_indicator_${l}: `;
     } else {
       segredo = `${segredo}:stop_button: `
     };
@@ -100,10 +124,9 @@ segredo = (src) => {
   return segredo;
 };
 
-themeIs = (all, src) => {
-  let temas = all.temas;
+const themeIs = () => {
   for (let i = 0; i < temas.length; i++) {
-    let este = all.palavras[temas[i]].includes(src.palavra);
+    let este = forca.palavras[temas[i]].includes(src.palavra);
     if (este) {
       console.log('- Tema: ' + temas[i])
       src.tema = temas[i];
@@ -111,20 +134,20 @@ themeIs = (all, src) => {
   };
 };
 
-createDeath = (src) => {
+const createDeath = () => {
   //console.log(`Timeout definido para canal "${src.chan.name}"`);
-  src.death = setTimeout(function(src) {
+  src.death = setTimeout(function() {
     src.itens.color = colorIs(0);
     src.itens.title = ':x: FIM DE JOGO!';
     src.itens.description = ':clock4: Acabou o tempo';
     src.itens.footer.text = '';
     src.answ.edit({ embeds: [ src.itens ]});
     //console.log(`Chegou ao fim o death do canal "${src.chan.name}"`);
-    fim(all, src.chanId);
-  }, inMili('00:06:40'), src);
+    fim(src.chanId);
+  }, inMili('00:06:40'));
 };
 
-hasChances = async(src, m) => {
+const hasChances = async (src, m) => {
   //Ja que errou:
   //Se ainda houverem chances
   if (src.chances > 0) {
@@ -133,21 +156,16 @@ hasChances = async(src, m) => {
     src.itens.color = colorIs(src.chances);
     src.itens.title = title(src);
     src.itens.description = segredo(src);
-    src.itens.footer.text = `${src.dica}
-Já foram: ${foram(src)}`;
-    await m.delete()
-     .catch(console.error);
+    src.itens.footer.text = `${src.dica}`;
     src.answ.edit({ embeds: [ src.itens ] });
   } else {
     //Se acabarem as tentativas
-    await m.delete()
-     .catch(console.error);
     gameOver(src);
-    return;
+    return 0;
   };
 };
 
-noAdv = (all, chanId) => {
+const noAdv = (forca, chanId) => {
   if (!src.acertos.includes(false)) {
     //se acertarem todas as letras
     //sem adivinhar
@@ -156,27 +174,33 @@ noAdv = (all, chanId) => {
     src.itens.description = 'Ninguém adivinhou a palavra';
     src.itens.footer.text = ':(';
     src.answ.edit({ embeds: [ src.itens ] });
-    fim(all, chanId);
-  } else {
-    //se ainda tiverem letras nao descobertas
-    src.itens.color = colorIs(src.chances);
-    src.itens.title = title(src);
-    if (src.jaErrou) {
-      src.itens.footer.text = `${src.dica}
-Já foram: ${foram(src)}`;
-    };
-    src.itens.description = segredo(src);
+    fim(chanId);
   };
 };
 
-//------------------------------------------------
+const upLines = async () => {
+    abcde = new MessageActionRow({
+      components: [ src.but.a, src.but.b, src.but.c, src.but.d, src.but.e ] });
+    fghij = new MessageActionRow({
+      components: [ src.but.f, src.but.g, src.but.h, src.but.i, src.but.j ] });
+    klm = new MessageActionRow({
+      components: [ src.but.k, src.but.l, src.but.m, src.but.more ] });
+    nopqr = new MessageActionRow({
+      components: [ src.but.n, src.but.o, src.but.p, src.but.q, src.but.r ] });
+    stuvw = new MessageActionRow({
+      components: [ src.but.s, src.but.t, src.but.u, src.but.v, src.but.w ] });
+    xyz = new MessageActionRow({
+      components: [ src.but.x, src.but.y, src.but.z, src.but.back ] });
+};
+
+//----------------------------------------------------
 
 module.exports.run = async (message, args, chan) => {
-  if (all[chan.id]) {
-    src = all[chan.id];
+  if (forca[chan.id]) {
+    src = forca[chan.id];
   } else {
-    all[chan.id] = {};
-    src = all[chan.id];
+    forca[chan.id] = {};
+    src = forca[chan.id];
   };
   if (src.ativo) return;
 
@@ -189,27 +213,37 @@ module.exports.run = async (message, args, chan) => {
   src.jaErrou = false;
   src.chan = chan;
   src.chanId = chan.id;
+  src.tela = 0;
+  src.but = {};
+  src.letrasNoRep = [];
   //src.answ
   //src.palpite
   //src.palavra
   //src.itens
-  //src.collector
+  //src.msgCollector
+
+  setBut();
+  upLines();
 
   //Escolhe a palavra
-  src.palavra = all.palavras[random(all.palavras.length - 1)];
+  src.palavra = palavras[random(palavras.length - 1)];
   console.log("- Palavra: " + src.palavra);
 
   //Descobre o tema
-  themeIs(all, src);
+  themeIs();
 
   //Preenche src.letras com as letras da palavra
   //escolhida e preenche com falses o objeto
   //src.acertos
-  for (let i = 0; i < src.palavra.length; i++) {
-    src.letras.push(src.palavra[i]);
-    src.acertos[i] = false;
+  src.letras = src.palavra.split('');
+  for (l of src.letras) {
+    if (!src.letrasNoRep.includes(l)) {
+      src.letrasNoRep.push(l);
+      src.acertos.push(false);
+    };
   };
-
+  console.log("- Letras: " + src.letras);
+  console.log("- LetrasNoRep: " + src.letrasNoRep);
   //Informacoes para usar nas mensagens
   //enviadas
   src.itens = {
@@ -220,16 +254,20 @@ module.exports.run = async (message, args, chan) => {
       text: ``
     }
   };
-  createDeath(src);
-  src.answ = await chan.send({ embeds: [ src.itens ] });
-  src.collector = chan.createMessageCollector({ filter, time: inMili('00:06:40')});
+  tela[0] = [ abcde, fghij, klm ];
+  tela[1] = [ nopqr, stuvw, xyz ];
+  createDeath();
+  src.answ = await chan.send({
+    embeds: [ src.itens ],
+    components: tela[src.tela] });
+  src.msgCollector = chan.createMessageCollector({ filter: msgFilter, idle: inMili('00:06:40')});
   //Oq vai acontecer com cada mensagem que for
   //enviada durante a forca
-  src.collector.on('collect', async m => {
+  src.msgCollector.on('collect', async m => {
     let content = m.content.toLowerCase();
     let args = content.slice(prefix.length).trim().split(' ');
     let chan = m.channel;
-    let src = all[chan.id];
+    let src = forca[chan.id];
 
     //Comandos de jogo ativo
     switch (args[0]) {
@@ -239,9 +277,10 @@ module.exports.run = async (message, args, chan) => {
         src.itens.title = 'JOGO FINALIZADO';
         src.itens.description = '';
         src.itens.footer.text = ``;
-        src.answ.edit({ embeds: [ src.itens ]});
+        src.answ.edit({ embeds: [ src.itens ],
+          components: [] });
         clearTimeout(src.death);
-        fim(all, chan.id);
+        fim(chan.id);
         return;
       break;
 
@@ -272,42 +311,11 @@ ${src.itens.footer.text.trim()}`;
     src.palpite = args[0];
 
     if (src.palpite == 'forca') {
-      await m.delete()
-       .catch(console.error);
+      await m.delete();
       return;
     };
 
     console.log(`-- Palpite: ${src.palpite}`)
-
-    //Se palpite for uma letra
-    if (isLetra(src.palpite)) {
-      console.log('- Letra recebida')
-      //Se palpite ainda nao foi usado
-      if (!src.tentativas.includes(src.palpite)) {
-        src.tentativas.push(src.palpite);
-        upAcertos(src);
-        src.itens.desc = segredo(src);
-        console.log('- Palpite novo');
-        //Se acertou
-        if (src.acertos.includes(src.palpite)) {
-          console.log("- Acertou!");
-          src.tentativas.splice(-1, 1);
-          await m.delete()
-           .catch(console.error);
-          noAdv(all, chan.id, m);
-        } else {
-          //Se errou
-          console.log("- Errou");
-          hasChances(src, m);
-        }; //Fecha o else do if nao houver acerto
-      } else {
-        //se o palpite ja foi usado
-        console.log('- Letra repetida');
-        await m.delete()
-         .catch(err => console.error("erro7: " + err));
-        return;
-      }; //fecha o else do if palpite nao foi usado
-    }; //Fecha o if palpite isLetra
 
     //Se tamanhos forem iguais
     if (src.palpite.length == src.palavra.length) {
@@ -315,28 +323,82 @@ ${src.itens.footer.text.trim()}`;
         await m.delete();
         vitoria(src, m.author);
       } else {
-        //Houve erro entao:
-        //Se restam chances
-        if (src.chances > 0) {
-          src.chances--;
-          upSegredo(src);
-          src.itens.color = colorIs(src.chances);
-          src.itens.title = title(src);
-          src.itens.desc = segredo(src);
-          src.itens.footer.text = `${src.dica}
-Já foram: ${foram(src)}`;
-          await m.delete()
-           .catch(console.log("-- err 3400"));
-          src.answ.edit({ embeds: [ src.itens ] });
-        } else {
-          //se acabarem as chances
-          await m.delete()
-           .catch(console.error);
-          gameOver(src);
-          return;
-        };
+        hasChances(src, m);
       }; //fecha o else do if palpite = palavra
     }; //Fecha o if tamanhos iguais
+
     src.answ.edit({ embeds: [ src.itens ]});
-  }); //Fecha o collector
+  }); //Fecha o msgCollector
+
+  src.iCollector = src.answ.createMessageComponentCollector({ filter: compFilter, idle: inMili('00:06:40') });
+  src.iCollector.on("collect", async i => {
+    let chan = i.channel;
+    let src = forca[chan.id];
+    let m = i.message;
+
+    switch (i.customId) {
+      case 'more':
+        if (src.tela == 0) src.tela = 1
+          else src.tela = 0;
+        break;
+      default:
+        src.but[i.customId] = new MessageButton({
+          label: i.customId.toUpperCase(),
+          customId: i.customId,
+          //emoji: null,
+          style: 'SECONDARY',
+          disabled: true
+        });
+        src.palpite = i.customId;
+        if (src.tentativas.includes(src.palpite)) return;
+          src.tentativas.push(src.palpite);
+          upAcertos(src);
+          src.itens.desc = segredo(src);
+          //Se acertou
+          if (src.acertos.includes(src.palpite)) {
+            console.log("- Acertou!");
+            src.tentativas.splice(-1, 1);
+            let falses = 0;
+            for (a of src.acertos) {
+              if (!a) falses += 1;
+            };
+            console.log("- Faltam " + falses + " letras")
+            if (falses == 2) {
+              src.itens.color = colorIs(src.chances);
+              src.itens.title = title(src);
+              if (src.jaErrou) {
+                src.itens.footer.text = `${src.dica}`;
+              };
+              src.itens.description = segredo(src);
+              src.answ.edit({
+                embeds: [ src.itens ],
+                components: [] });
+              return;
+            };
+            //se ainda tiverem letras nao descobertas
+            src.itens.color = colorIs(src.chances);
+            src.itens.title = title(src);
+            if (src.jaErrou) {
+              src.itens.footer.text = `${src.dica}`;
+            };
+            src.itens.description = segredo(src);
+            //noAdv(forca, chan.id, m);
+          } else {
+            //Se errou
+            console.log("- Errou");
+            let end = await hasChances(src, m);
+            if (end) return;
+          }; //Fecha o else do if nao houver acerto
+    };
+
+    await upLines();
+
+    tela[0] = [ abcde, fghij, klm ];
+    tela[1] = [ nopqr, stuvw, xyz ];
+
+    await src.answ.edit({
+      embeds: [ src.itens ],
+      components: tela[src.tela] });
+  });
+
 }; //fecha o modulo.exports

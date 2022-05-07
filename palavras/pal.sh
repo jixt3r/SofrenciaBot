@@ -1,59 +1,59 @@
 #!/bin/sh
 
-dir=$HOME/SofrenciaBot/palavras.json;
-run=true;
+DIR=$HOME/SofrenciaBot/files;
+fonte=$DIR/ultra.json;
+result=$DIR/test.json;
 pos='":"'
-palPais=`cat $dir | grep '"pais"' | cut -f2 -d':' | tr -d ['"']`;
-palAnimal=`cat $dir | grep '"animal"' | cut -f2 -d':' | tr -d ['"']`;
-palComida=`cat $dir | grep '"comida"' | cut -f2 -d':' | tr -d ['"']`;
+palPais=`cat $fonte | grep '"pais"' | cut -f2 -d':' | tr -d ['"']`;
+palAnimal=`cat $fonte | grep '"animal"' | cut -f2 -d':' | tr -d ['"']`;
+palComida=`cat $fonte | grep '"comida"' | cut -f2 -d':' | tr -d ['"']`;
 
-while [ $run = true ]; do
+while [ true ]; do
+  echo '- Temas disponíveis:'
+  echo 'pais, animal, comida'
+  echo ''
+  echo ''
   echo '\n- Digite tema e palavra:'
   read value;
   tema=`echo $value | cut -f1 -d' '`
   palavra=`echo $value | cut -f2 -d' '`
 
-  if [ ! "$tema" -o ! "$palavra"]; then
-    echo '\n- '
-  fi;
-
   #Confere se a palavra fornecida já está no tema
   #fornecido
-  repeated=`cat $dir | grep $tema | grep $palavra`
+  repeated=`cat $fonte | grep $tema | grep ,$palavra, >> /dev/null`
 
   #Se a palavra já está no arquivo
   if [ "$repeated" ]; then
     echo '\n- Essa palavra já está no arquivo';
+    exit;
+  fi;
+
+  if [ ! "$tema" ]; then
+    echo '- Deseja encerrar?';
+    read resposta;
+    if [ "$resposta" = 'sim' ]; then
+      echo '{' > $result;
+      echo '  "pais":"'$palPais'",' >> $result;
+      echo '  "animal":"'$palAnimal'",' >> $result;
+      echo '  "comida":"'$palComida'"' >> $result;
+      echo '}' >> $result;
+      clear;
+      echo '- Arquivo atualizado';
+      exit
+    fi;
   else
-    #Se a palavra não estiver no arquivo
+    case $tema in
 
-    #Se 
-    if [ ! "$palavra" ]; then
-      echo '- Deseja encerrar?';
-      read resposta;
-      if [ "$resposta" = 'sim' ]; then
-        echo '{' > $dir;
-        echo '  "pais":"'$palPais'",' >> $dir;
-        echo '  "animal":"'$palAnimal'",' >> $dir;
-        echo '  "comida":"'$palComida'"' >> $dir;
-        echo '}' >> $dir;
-        clear;
-        echo '- Arquivo atualizado';
-        echo '* Corrija as vírgulas no arquivo';
-        run=false;
-      fi;
-    else
-      case $tema in
-      pais)
-      palPais=$palPais,$palavra;;
+    pais)
+      palPais=$palPais,$palavra
+      echo "A palavra $palavra foi guardada.";;
 
-      animal)
+    animal)
       palAnimal=$palAnimal,$palavra;;
 
-      comida)
+    comida)
       palComida=$palComida,$palavra;;
-      esac
-    fi;
+    esac
   fi;
 done;
 

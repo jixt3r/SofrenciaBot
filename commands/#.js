@@ -8,16 +8,16 @@ const emojis = ['1️⃣', '2️⃣', '3️⃣',
                 '4️⃣', '5️⃣', '6️⃣',
                 '7️⃣', '8️⃣', '9️⃣'
 ];
-var all = {};
+var velha = {};
 
 //--------------------Funcoes---------------------
 
 compFilter = interaction => {
-  return interaction.user.id == src.invitedId;
+  return interaction.user.id == veia.invitedId;
 };
 
 filter = (m) => {
-  let IDs = [src.players[0].id, src.players[1].id]
+  let IDs = [veia.players[0].id, veia.players[1].id]
   return IDs.includes(m.author.id) && m.content.toLowerCase().startsWith(prefix);
 };
 
@@ -67,132 +67,131 @@ venceu = (grade) => {
 };
 
 end = (chan) => {
-  all[chan.id] = undefined;
+  velha[chan.id] = undefined;
 };
 
 //------------------------------------------------
 
 module.exports.run = async (message, args, chan) => {
-  if (all[chan.id]) {
-    src = all[chan.id];
+  if (velha[chan.id]) {
+    veia = velha[chan.id];
   } else {
-    all[chan.id] = {};
-    src = all[chan.id];
+    velha[chan.id] = {};
+    veia = velha[chan.id];
   };
-
-  if (src.ativo) return;
+  if (veia.ativo) return;
 
   let guildMembers = chan.guild.members;
-  src.invited = args[1];
-  if (!src.invited) {
+  veia.invited = args[1];
+  if (!veia.invited) {
     message.reply('Falta um usuário para jogar junto');
     return;
-  } else if (!src.invited.startsWith('<@') || !src.invited[src.invited.length - 1] == '>' || !src.invited.length == 21 || isNaN(src.invited.slice(2, 20)) ) {
+  } else if (!veia.invited.startsWith('<@') || !veia.invited[veia.invited.length - 1] == '>' || !veia.invited.length == 21 || isNaN(veia.invited.slice(2, 20)) ) {
     message.reply("Usuário indisponível")
     return;
   };
 
-  if (!guildMembers.resolve(src.invited.slice(2, 20))) {
+  if (!guildMembers.resolve(veia.invited.slice(2, 20))) {
     message.reply("Usuário indisponível")
     return;
   };
 
   start = (chan) => {
-    let src = all[chan.id]
-    src.itens.title = 'JOGO DA VELHA';
-    src.itens.description = textGrade(src.grade);
-    src.itens.footer.text = '';
-    src.answ.edit({ embeds: [ src.itens ] });
+    let veia = velha[chan.id];
+    veia.itens.title = 'JOGO DA VELHA';
+    veia.itens.description = textGrade(veia.grade);
+    veia.itens.footer.text = '';
+    veia.answ.edit({ embeds: [ veia.itens ] });
 
-    src.collector = chan.createMessageCollector({ filter: filter, time: inMili('00:06:40') });
-    src.collector.on('collect', async m => {
+    veia.collector = chan.createMessageCollector({ filter: filter, time: inMili('00:06:40') });
+    veia.collector.on('collect', async m => {
       //console.log("\n- Mensagem coletada");
       let chan = m.channel;
-      let src = all[chan.id];
+      let veia = velha[chan.id];
       let content = m.content.toLowerCase();
       let args = content.slice(prefix.length).trim().split(' ');
 
       switch (args[0]) {
         case 'end':
-          src.collector.stop();
-          src.itens.title = 'JOGO DA VELHA';
-          src.itens.footer.text = 'Jogo encerrado!';
-          src.answ.edit({ embeds: [ src.itens ]});
+          veia.collector.stop();
+          veia.itens.title = 'JOGO DA VELHA';
+          veia.itens.footer.text = 'Jogo encerrado!';
+          veia.answ.edit({ embeds: [ veia.itens ]});
           end(chan);
         break;
       };
-      if (src.turn == 0) {
-        src.turn = 1;
+      if (veia.turn == 0) {
+        veia.turn = 1;
       } else {
-        src.turn = 0;
+        veia.turn = 0;
       };
-      if (!src.turn) {
-        src.turn = 0;
+      if (!veia.turn) {
+        veia.turn = 0;
       };
-      let turnOf = src.players[src.turn];
+      let turnOf = veia.players[veia.turn];
       if (m.author.id != turnOf.id) return;
       //console.log("\n- TurnOf: " + turnOf.username);
 
       let pos = args[0];
-      //console.log("\n- Rodada: " + src.rodada);
+      //console.log("\n- Rodada: " + veia.rodada);
       //console.log("- Pos: " + pos);
       if (!(0 < pos && pos < 10) || isNaN(pos)) {
         await m.delete();
         return;
       };
-      if (src.grade[pos - 1] == '!') {
-        src.grade[pos - 1] = rodadas[src.rodada];
+      if (veia.grade[pos - 1] == '!') {
+        veia.grade[pos - 1] = rodadas[veia.rodada];
       } else {
         await m.delete();
         return;
       };
-      src.sum += pos - 1;
+      veia.sum += pos - 1;
       //console.log("- Rodada++")
-      src.rodada++;
-      if (src.rodada == 8) {
-        console.log(36 - src.sum);
-        src.grade[36 - src.sum] = 'O';
-        src.collector.stop();
+      veia.rodada++;
+      if (veia.rodada == 8) {
+        console.log(36 - veia.sum);
+        veia.grade[36 - veia.sum] = 'O';
+        veia.collector.stop();
       };
-      src.itens.description = textGrade(src.grade);
+      veia.itens.description = textGrade(veia.grade);
       await m.delete();
-      src.answ.edit({ embeds: [ src.itens ]});
-      let vitoria = venceu(src.grade);
+      veia.answ.edit({ embeds: [ veia.itens ]});
+      let vitoria = venceu(veia.grade);
       if (vitoria) {
         if (vitoria == 'O') {
-          var champ = src.players[0].username;
+          var champ = veia.players[0].username;
         } else {
-          var champ = src.players[1].username;
+          var champ = veia.players[1].username;
         };
-        src.collector.stop();
-        src.itens.title = 'JOGO DA VELHA';
-        if (!src.autoplay) {
-          src.itens.footer.text = `${champ} venceu a partida`;
+        veia.collector.stop();
+        veia.itens.title = 'JOGO DA VELHA';
+        if (!veia.autoplay) {
+          veia.itens.footer.text = `${champ} venceu a partida`;
         } else {
-          src.itens.footer.text = 'E agora? Você venceu ou perdeu?';
+          veia.itens.footer.text = 'E agora? Você venceu ou perdeu?';
         };
-        src.answ.edit({ embeds: [ src.itens ]});
+        veia.answ.edit({ embeds: [ veia.itens ]});
         end(chan);
-      } else if (src.rodada == 8) {
-        src.collector.stop();
-        src.itens.title = 'JOGO DA VELHA';
-        src.itens.footer.text = 'Deu velha! :/';
-        src.answ.edit({ embeds: [ src.itens ]});
+      } else if (veia.rodada == 8) {
+        veia.collector.stop();
+        veia.itens.title = 'JOGO DA VELHA';
+        veia.itens.footer.text = 'Deu velha! :/';
+        veia.answ.edit({ embeds: [ veia.itens ]});
         end(chan);
       };
     }); //Fecha o collector.on
-    src.death = setTimeout((src, chan) => {
-      src.itens.footer.text = 'Tempo esgotado!';
-      src.answ.edit({ embeds: [ src.itens ] });
+    veia.death = setTimeout((veia, chan) => {
+      veia.itens.footer.text = 'Tempo esgotado!';
+      veia.answ.edit({ embeds: [ veia.itens ] });
       end(chan);
-    }, inMili('00:06:40'), src, chan);
+    }, inMili('00:06:40'), veia, chan);
   };
 
-  src.grade = ['!', '!', '!', // 0 1 2
+  veia.grade = ['!', '!', '!', // 0 1 2
                '!', '!', '!', // 3 4 5
                '!', '!', '!'  // 6 7 8
   ];
-  src.itens = {
+  veia.itens = {
     color: '#c0c0c0',
     title: 'JOGO DA VELHA',
     description: '',
@@ -200,24 +199,22 @@ module.exports.run = async (message, args, chan) => {
       text: ''
     }
   };
-  src.ativo = true;
-  src.rodada = 0;
-  src.sum = 0;
-  src.close = false;
-  src.userId = message.author.id;
-  src.invitedId = src.invited.slice(2, 20);
-  if (src.userId == src.invitedId) src.autoplay = true;
-  src.players = [];
-  await guildMembers.fetch({ user: [ src.userId, src.invitedId ] })
+  veia.ativo = true;
+  veia.rodada = 0;
+  veia.sum = 0;
+  veia.close = false;
+  veia.userId = message.author.id;
+  veia.invitedId = veia.invited.slice(2, 20);
+  if (veia.userId == veia.invitedId) veia.autoplay = true;
+  veia.players = [];
+  await guildMembers.fetch({ user: [ veia.userId, veia.invitedId ] })
    .then(collected => {
-     src.players.push(collected.get(src.userId).user);
-     src.players.push(collected.get(src.invitedId).user);
+     veia.players.push(collected.get(veia.userId).user);
+     veia.players.push(collected.get(veia.invitedId).user);
    })
    .catch(console.error);
-  //console.log(src.players[0].username);
-  //console.log(src.players[1].username);
 
-  if (!src.autoplay) {
+  if (!veia.autoplay) {
     accept = new MessageButton({
       //label: '',
       customId: 'sim',
@@ -237,57 +234,57 @@ module.exports.run = async (message, args, chan) => {
     });
 
     //Prepara a mensagem do convite
-    src.itens.description = `${src.invited}, <@${src.userId}> quer jogar jogo da velha com você.
+    veia.itens.description = `${veia.invited}, <@${veia.userId}> quer jogar jogo da velha com você.
 Use 👍 para aceitar, ou 👎 para recusar.`;
-    src.answ = await chan.send({
-      embeds: [ src.itens ],
+    veia.answ = await chan.send({
+      embeds: [ veia.itens ],
       components: [ actRow ]
     });
 
-    await src.answ.awaitMessageComponent({ filter: compFilter, time: 60_000 })
+    await veia.answ.awaitMessageComponent({ filter: compFilter, time: 60_000 })
      .then(async interaction => {
        console.log("\n- Interação detectada!");
        //console.log(interaction);
        switch (interaction.customId) {
          case 'não':
-           src.itens.title = 'Convite recusado!';
-           src.itens.description = `${src.invited} não quer jogar.`;
-           src.itens.footer.text = ':(';
-           src.answ.edit({ embeds: [ src.itens ], components: [] });
-           src.close = true;
+           veia.itens.title = 'Convite recusado!';
+           veia.itens.description = `${veia.invited} não quer jogar.`;
+           veia.itens.footer.text = ':(';
+           veia.answ.edit({ embeds: [ veia.itens ], components: [] });
+           veia.close = true;
          break;
        };
      })
      .catch(err => {
        console.error(err);
-       src.itens.title = 'Que demora!';
-       src.itens.description = 'O jogo foi cancelado!';
-       src.itens.footer.text = '(×_×)';
-       src.answ.edit({ embeds: [ src.itens ],
+       veia.itens.title = 'Que demora!';
+       veia.itens.description = 'O jogo foi cancelado!';
+       veia.itens.footer.text = '(×_×)';
+       veia.answ.edit({ embeds: [ veia.itens ],
          components: [] });
        end(chan);
-       src.close = true;
+       veia.close = true;
      });
   }; //Fecha o if !autoplay
-   if (src.close) {
+   if (veia.close) {
      end(chan);
      return;
    };
 
-   console.log("\n- Que comece o jogo");
+   console.log("\n- Que comece o jogo!");
 
-   src.itens.title = 'JOGO DA VELHA';
-   if (!src.autoplay) {
-     src.itens.description = `<@${src.userId}> e ${src.invited}, o jogo começará em 10 segundos.`;
+   veia.itens.title = 'JOGO DA VELHA';
+   if (!veia.autoplay) {
+     veia.itens.description = `<@${veia.userId}> e ${veia.invited}, o jogo começará em 10 segundos.`;
    } else {
-     src.itens.description = 'O jogo começará em 10 segundos.';
+     veia.itens.description = 'O jogo começará em 10 segundos.';
    };
-   src.itens.footer.text = '';
-   if (!src.autoplay) {
-     src.answ.edit({ embeds: [ src.itens ],
+   veia.itens.footer.text = '';
+   if (!veia.autoplay) {
+     veia.answ.edit({ embeds: [ veia.itens ],
        components: [] });
    } else {
-     src.answ = await chan.send({ embeds: [ src.itens ] });
+     veia.answ = await chan.send({ embeds: [ veia.itens ] });
    };
 
    setTimeout( start, 10_000, chan);
