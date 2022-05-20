@@ -1,14 +1,15 @@
 
 //-------------------Variaveis--------------------
-const { prefix } = require('../config.json');
+const { prefix } = require('../../config.json');
 const { MessageActionRow, MessageButton } = require('discord.js');
-const { inMili } = require('../files/funcs.js');
+const { inMili } = require('../../files/funcs.js');
 const rodadas = ["O", "X", "O", "X", "O", "X", "O", "X", "O"];
 const emojis = ['1️⃣', '2️⃣', '3️⃣',
                 '4️⃣', '5️⃣', '6️⃣',
                 '7️⃣', '8️⃣', '9️⃣'
 ];
 var velha = {};
+const mention = new RegExp('<@[0-9]{17}>');
 
 //--------------------Funcoes---------------------
 
@@ -82,19 +83,14 @@ module.exports.run = async (message, args, chan) => {
   if (veia.ativo) return;
 
   let guildMembers = chan.guild.members;
-  veia.invited = args[1];
-  if (!veia.invited) {
-    message.reply('Falta um usuário para jogar junto');
-    return;
-  } else if (!veia.invited.startsWith('<@') || !veia.invited[veia.invited.length - 1] == '>' || !veia.invited.length == 21 || isNaN(veia.invited.slice(2, 20)) ) {
-    message.reply("Usuário indisponível")
-    return;
-  };
+  veia.invited = args[0];
+  if (!veia.invited)
+    return message.reply('Falta um usuário para jogar junto.');
+    else if (!mention.test(veia.invited))
+      return message.reply("Usuário inválido!");
 
-  if (!guildMembers.resolve(veia.invited.slice(2, 20))) {
-    message.reply("Usuário indisponível")
-    return;
-  };
+  if (!guildMembers.resolve(veia.invited.slice(2, 20)))
+    return message.reply("Usuário indisponível.");
 
   start = (chan) => {
     let veia = velha[chan.id];

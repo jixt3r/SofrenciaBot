@@ -1,15 +1,12 @@
 const { MessageActionRow, MessageSelectMenu } = require('discord.js');
-
-const { prefix } = require('../config.json');
-
-code = (text) => {
-  return '`' + text + '`';
-};
-
+const { ajudas } = require('./ajudas');
 
 var ajuda = {};
-ajuda.itens = { color: '#2eb89a', title: 'AJUDA',
-  description: ajudas.geral };
+ajuda.embed = {
+  color: '#2eb89a',
+  title: 'AJUDA',
+  description: ajudas.geral
+};
 var menus = [];
 var actRow = [];
 
@@ -44,60 +41,60 @@ actRow[1] = new MessageActionRow({
   components: [ menus[1] ]
 });
 
-//----------------------------------------------------
+//--------------------------------------------------\\
 
-exports.run = async (msg, args, chan) => {
-  if (args == 'interaction') {
-    let i = msg;
-    await i.reply({ embeds: [ ajuda.itens ],
-    components: [ actRow[0] ] });
-    return;
-  };
-  await msg.reply({ embeds: [ ajuda.itens ],
-    components: [ actRow[0] ] });
-};
+exports.run = async (inmsg, args, chan) =>
+  await inmsg.reply({
+    embeds: [ ajuda.embed ],
+    components: [ actRow[0] ]
+  });
 
-exports.responsive = async (i, message) => {
-  let need;
-  if (message.reference) {
+exports.responsive = async (i, message, chan) => {
+  let need;   //Usuário que solicitou o menu
+  if (message.reference) { //Se for um menu que
+                     //respondeu uma mensagem s.forca
     let refChan = message.channel;
     let refMsgId = message.reference.messageId;
     let refMsg = await refChan.messages.fetch(refMsgId);
     need = refMsg.author;
   } else {
+    //Se for um menu que respondeu um slash
     need = message.interaction.user;
   };
+
   if (i.user.id != need.id) return;
   await message.edit({ components: [ actRow[1] ] });
-  let itens = { color: '#2eb89a' };
+  let embed = { color: '#2eb89a' };
+
   switch (i.values[0]) {
     case '#':
-      itens.title = 'AJUDA - JOGO DA VELHA';
-      itens.description = ajudas.velha;
-      await message.edit({ embeds: [ itens ] });
+      embed.title = 'AJUDA - JOGO DA VELHA';
+      embed.description = ajudas.velha;
+      await message.edit({ embeds: [ embed ] });
     break;
     case 'forca':
-      itens.title = 'AJUDA - FORCA';
-      itens.description = ajudas.forca;
-      await message.edit({ embeds: [ itens ] });
+      embed.title = 'AJUDA - FORCA';
+      embed.description = ajudas.forca;
+      await message.edit({ embeds: [ embed ] });
     break;
     case 'reply':
-      itens.title = 'AJUDA - REPLY';
-      itens.description = ajudas.reply;
-      await message.edit({ embeds: [ itens ] });
+      embed.title = 'AJUDA - REPLY';
+      embed.description = ajudas.reply;
+      await message.edit({ embeds: [ embed ] });
     break;
     case 'send':
-      itens.title = 'AJUDA - SEND';
-      itens.description = ajudas.send;
-      await message.edit({ embeds: [ itens ] });
+      embed.title = 'AJUDA - SEND';
+      embed.description = ajudas.send;
+      await message.edit({ embeds: [ embed ] });
     break;
     case 'inicio':
-      itens.title = 'AJUDA';
-      itens.description = ajudas.geral;
+      embed.title = 'AJUDA';
+      embed.description = ajudas.geral;
       await message.edit({
-        embeds: [ itens ],
+        embeds: [ embed ],
         components: [ actRow[0] ]
       });
     break;
   };
+
 };

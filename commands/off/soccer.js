@@ -1,4 +1,4 @@
-const { inMili } = require('../files/funcs.js');
+const { inMili } = require('../../files/funcs.js');
 var timers = {};
 var filters = {};
 

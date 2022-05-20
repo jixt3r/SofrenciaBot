@@ -37,4 +37,5 @@ exports.run = async (message, args, chan, content) => {
     components: [ but.k, but.l, but.m, but.more, but.set ] });
   let answ = await chan.send({
     components: [ abcde, fghij, klm ]});
-}; //Fecha o exports.run
+};
+

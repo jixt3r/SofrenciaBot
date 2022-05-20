@@ -1,7 +1,7 @@
-const { inMili, random } = require('../files/funcs');
+const { inMili, random } = require('../../files/funcs');
 const { MessageActionRow, MessageButton } = require('discord.js');
-const { prefix } = require('../config.json');
-const pList = require('../files/ultra.json');
+const { prefix } = require('../../config.json');
+const pList = require('../../files/ultra.json');
 var src;
 var tela = [];
 var forca = { palavras: {} };
@@ -16,14 +16,36 @@ const compFilter = i => true;
 
 //Passa as palavras do "pList" para o objeto
 //"palavras" no formato array
-for(let i = 0; i < temas.length; i++){
-  let tema = temas[i];
+for (tema of temas) {
   forca.palavras[tema] = pList[tema].split(',');
 };
+
 const letras = [ "a","b","c","d","e","f","g","h",
                  "i","j","k","l","m","n","o","p",
                  "q","r","s","t","u","v","w","x",
                  "y","z"];
+
+class data {
+  constructor(chan) {
+    this.ativo = true;
+    this.dica = '';
+    this.acertos = [];
+    this.letras = [];
+    this.chances = 5;
+    this.tentativas = [];
+    this.jaErrou = false;
+    this.chan = chan;
+    this.chanId = chan.id;
+    this.tela = 0;
+    this.but = {};
+    this.letrasNoRep = [];
+    this.answ = null;
+    this.palpite = null;
+    this.palavra = null;
+    this.itens = {};
+    this.msgCollector = null;
+  };
+};
 
 //-------------------FUNCOES----------------------
 
@@ -54,13 +76,10 @@ const colorIs = (chances) => {
   let verde = '#00ffa2'; //#00a86b-Jade
   let amarelo = '#ffd700';
   let vermelho = '#ff2400';
-  if (chances > 3) {
-    return verde;
-  } else if (chances > 1 && chances < 4) {
-      return amarelo;
-  } else if (chances < 2) {
-      return vermelho;
-  };
+  if (chances > 3) return verde;
+    else if (chances > 1 && chances < 4)
+    return amarelo;
+    else if (chances < 2) return vermelho;
 };
 
 const fim = (chanId) => {
@@ -81,9 +100,8 @@ const gameOver = async (src) => {
   fim(src.chanId)
 };
 
-const title = () => {
-  return `FORCA | RESTAM ${src.chances} ERROS`;
-};
+const title = () =>
+  `FORCA | RESTAM ${src.chances} ERROS`;
 
 const foram = (src) => {
   let array = [];
@@ -115,11 +133,10 @@ const upAcertos = () => {
 const segredo = () => {
   let segredo = '';
   for(l of src.letras) {
-    if (src.acertos.includes(l)) {
+    if (src.acertos.includes(l))
       segredo = `${segredo}:regional_indicator_${l}: `;
-    } else {
-      segredo = `${segredo}:stop_button: `
-    };
+      else
+      segredo = `${segredo}:stop_button: `;
   };
   return segredo;
 };
@@ -161,7 +178,7 @@ const hasChances = async (src, m) => {
   } else {
     //Se acabarem as tentativas
     gameOver(src);
-    return 0;
+    return true;
   };
 };
 
@@ -179,54 +196,42 @@ const noAdv = (forca, chanId) => {
 };
 
 const upLines = async () => {
-    abcde = new MessageActionRow({
-      components: [ src.but.a, src.but.b, src.but.c, src.but.d, src.but.e ] });
-    fghij = new MessageActionRow({
-      components: [ src.but.f, src.but.g, src.but.h, src.but.i, src.but.j ] });
-    klm = new MessageActionRow({
-      components: [ src.but.k, src.but.l, src.but.m, src.but.more ] });
-    nopqr = new MessageActionRow({
-      components: [ src.but.n, src.but.o, src.but.p, src.but.q, src.but.r ] });
-    stuvw = new MessageActionRow({
-      components: [ src.but.s, src.but.t, src.but.u, src.but.v, src.but.w ] });
-    xyz = new MessageActionRow({
-      components: [ src.but.x, src.but.y, src.but.z, src.but.back ] });
+  abcde = new MessageActionRow({
+    components: [ src.but.a, src.but.b, src.but.c, src.but.d, src.but.e ] });
+
+  fghij = new MessageActionRow({
+    components: [ src.but.f, src.but.g, src.but.h, src.but.i, src.but.j ] });
+
+  klm = new MessageActionRow({
+    components: [ src.but.k, src.but.l, src.but.m, src.but.more ] });
+
+  nopqr = new MessageActionRow({
+    components: [ src.but.n, src.but.o, src.but.p, src.but.q, src.but.r ] });
+
+  stuvw = new MessageActionRow({
+    components: [ src.but.s, src.but.t, src.but.u, src.but.v, src.but.w ] });
+
+  xyz = new MessageActionRow({
+    components: [ src.but.x, src.but.y, src.but.z, src.but.back ] });
 };
 
 //----------------------------------------------------
 
 module.exports.run = async (message, args, chan) => {
-  if (forca[chan.id]) {
-    src = forca[chan.id];
-  } else {
-    forca[chan.id] = {};
+  if (forca[chan.id]) src = forca[chan.id];
+    else {
+    forca[chan.id] = new data(chan);
     src = forca[chan.id];
   };
-  if (src.ativo) return;
 
-  src.ativo = true;
-  src.dica = '';
-  src.acertos = [];
-  src.letras = [];
-  src.chances = 5;
-  src.tentativas = [];
-  src.jaErrou = false;
-  src.chan = chan;
-  src.chanId = chan.id;
-  src.tela = 0;
-  src.but = {};
-  src.letrasNoRep = [];
-  //src.answ
-  //src.palpite
-  //src.palavra
-  //src.itens
-  //src.msgCollector
+  if (src.ativo) return;
 
   setBut();
   upLines();
 
   //Escolhe a palavra
   src.palavra = palavras[random(palavras.length - 1)];
+
   console.log("- Palavra: " + src.palavra);
 
   //Descobre o tema
@@ -236,14 +241,17 @@ module.exports.run = async (message, args, chan) => {
   //escolhida e preenche com falses o objeto
   //src.acertos
   src.letras = src.palavra.split('');
+
   for (l of src.letras) {
     if (!src.letrasNoRep.includes(l)) {
       src.letrasNoRep.push(l);
       src.acertos.push(false);
     };
   };
+
   console.log("- Letras: " + src.letras);
   console.log("- LetrasNoRep: " + src.letrasNoRep);
+
   //Informacoes para usar nas mensagens
   //enviadas
   src.itens = {
@@ -254,13 +262,16 @@ module.exports.run = async (message, args, chan) => {
       text: ``
     }
   };
+
   tela[0] = [ abcde, fghij, klm ];
   tela[1] = [ nopqr, stuvw, xyz ];
   createDeath();
   src.answ = await chan.send({
     embeds: [ src.itens ],
     components: tela[src.tela] });
+
   src.msgCollector = chan.createMessageCollector({ filter: msgFilter, idle: inMili('00:06:40')});
+
   //Oq vai acontecer com cada mensagem que for
   //enviada durante a forca
   src.msgCollector.on('collect', async m => {
@@ -280,18 +291,17 @@ module.exports.run = async (message, args, chan) => {
         src.answ.edit({ embeds: [ src.itens ],
           components: [] });
         clearTimeout(src.death);
-        fim(chan.id);
-        return;
+        return fim(chan.id);
       break;
 
       case 'dica':
         await m.delete();
         if (src.dica) return;
-        if (src.tema == 'ind') {
+        if (src.tema == 'ind')
           src.dica = 'Essa palavra não tem dica. ;-;';
-        } else {
+          else
           src.dica = `Dica: ${src.tema.replace(/-/g,' ')}`;
-        };
+
         src.itens.footer.text = `${src.dica}
 ${src.itens.footer.text.trim()}`;
         src.answ.edit({ embeds: [ src.itens ] });
@@ -310,10 +320,8 @@ ${src.itens.footer.text.trim()}`;
 
     src.palpite = args[0];
 
-    if (src.palpite == 'forca') {
-      await m.delete();
-      return;
-    };
+    if (src.palpite == 'forca')
+      return await m.delete();
 
     console.log(`-- Palpite: ${src.palpite}`)
 
@@ -322,15 +330,14 @@ ${src.itens.footer.text.trim()}`;
       if (src.palpite == src.palavra) {
         await m.delete();
         vitoria(src, m.author);
-      } else {
-        hasChances(src, m);
-      }; //fecha o else do if palpite = palavra
+      } else hasChances(src, m);
     }; //Fecha o if tamanhos iguais
 
     src.answ.edit({ embeds: [ src.itens ]});
   }); //Fecha o msgCollector
 
   src.iCollector = src.answ.createMessageComponentCollector({ filter: compFilter, idle: inMili('00:06:40') });
+
   src.iCollector.on("collect", async i => {
     let chan = i.channel;
     let src = forca[chan.id];
@@ -341,6 +348,7 @@ ${src.itens.footer.text.trim()}`;
         if (src.tela == 0) src.tela = 1
           else src.tela = 0;
         break;
+
       default:
         src.but[i.customId] = new MessageButton({
           label: i.customId.toUpperCase(),
@@ -349,40 +357,47 @@ ${src.itens.footer.text.trim()}`;
           style: 'SECONDARY',
           disabled: true
         });
+
         src.palpite = i.customId;
+
         if (src.tentativas.includes(src.palpite)) return;
           src.tentativas.push(src.palpite);
           upAcertos(src);
           src.itens.desc = segredo(src);
+
           //Se acertou
           if (src.acertos.includes(src.palpite)) {
             console.log("- Acertou!");
             src.tentativas.splice(-1, 1);
             let falses = 0;
-            for (a of src.acertos) {
+
+            for (a of src.acertos)
               if (!a) falses += 1;
-            };
+
             console.log("- Faltam " + falses + " letras")
+
             if (falses == 2) {
               src.itens.color = colorIs(src.chances);
               src.itens.title = title(src);
+
               if (src.jaErrou) {
                 src.itens.footer.text = `${src.dica}`;
               };
+
               src.itens.description = segredo(src);
-              src.answ.edit({
+              return src.answ.edit({
                 embeds: [ src.itens ],
                 components: [] });
-              return;
             };
-            //se ainda tiverem letras nao descobertas
+
+            //Se ainda tiverem letras não descobertas
             src.itens.color = colorIs(src.chances);
             src.itens.title = title(src);
-            if (src.jaErrou) {
+
+            if (src.jaErrou)
               src.itens.footer.text = `${src.dica}`;
-            };
+
             src.itens.description = segredo(src);
-            //noAdv(forca, chan.id, m);
           } else {
             //Se errou
             console.log("- Errou");

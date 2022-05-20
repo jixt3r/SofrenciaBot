@@ -210,8 +210,8 @@ module.exports = {
 
 
   run: (m, args, chan, content) => {
-    if (!args[1]) return;
-    return module.exports[args[1]](m.guild);
+    if (!args[0]) return;
+    return module.exports[args[0]](m.guild);
   },
 
   responsive: async (i, msg, chan) => {
